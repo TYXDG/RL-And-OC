@@ -237,6 +237,7 @@ $$
 $$
 Q_k^*(x_k,u_k)=\mathbb{E}\big\{g_k(x_k,u_k,w_k)+J_{k+1}^*(f_k(\cdot))\big\},
 $$
+
 $$
 J_k^*(x_k)=\min_{u_k} Q_k^*(x_k,u_k).
 $$

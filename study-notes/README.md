@@ -25,3 +25,11 @@
 3. 已在用户设置中启用 `"markdown.math.enabled": true`。若公式仍不渲染，在扩展市场安装 **Markdown Math** 后重开预览。
 4. 若文件曾被编辑器去掉反斜杠导致公式乱码，可在项目根运行：  
    `python3 scripts/fix_study_notes_math.py`
+
+## 在 GitHub 上正确显示公式
+
+GitHub 使用 MathJax，比 Cursor 更挑剔：
+
+- 块级公式：`$$` 单独一行，**公式中间不要空行**，结束 `$$` 也单独一行且**顶格写**（不要缩进在列表里）。
+- 式号请写在 `$...$` 或 `$$...$$` **内部**（或用正文 `(1.4)`），不要把 `\tag{...}` 留在 `$` 外面。
+- 推送前可运行 `python3 scripts/fix_study_notes_math.py` 做上述规范化。

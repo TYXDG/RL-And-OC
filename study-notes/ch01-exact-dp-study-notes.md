@@ -50,19 +50,19 @@
 #### 主要内容
 
 1. **动力学**（式 1.1）  
-   $$
 
-   x_{k+1} = f_k(x_k, u_k), \quad k=0,\ldots,N-1.
-   
 $$
+x_{k+1} = f_k(x_k, u_k), \quad k=0,\ldots,N-1.
+$$
+
 2. **约束**：$u_k \in U_k(x_k)$——允许控制可以依赖当前状态（例如不能超速、不能走进墙）。  
 3. **可加总代价**（式 1.2）  
-   $$
 
-   J(x_0; u_0,\ldots,u_{N-1})
-   = g_N(x_N) + \sum_{k=0}^{N-1} g_k(x_k, u_k).
-   
 $$
+J(x_0; u_0,\ldots,u_{N-1})
+= g_N(x_N) + \sum_{k=0}^{N-1} g_k(x_k, u_k).
+$$
+
 4. **最优值函数** $J^*(x_0) = \min J(\cdot)$（全书用 `min` 表示 inf，即使最优控制未必达到）。  
 5. **两条典型路线**  
    - **有限状态图**：节点 = 状态，弧 = 决策，权 = 阶段代价 → **最短路径**。  
@@ -106,21 +106,19 @@ $$
 
 - 终端：$J_N^*(x_N) = g_N(x_N)$ (1.3)  
 - 对 $k=N-1,\ldots,0$：  
-  $$
 
-  J_k^*(x_k) = \min_{u_k \in U_k(x_k)}
-  \Big[ g_k(x_k,u_k) + J_{k+1}^*\big(f_k(x_k,u_k)\big) \Big] \tag{1.4}
-  
 $$
+J_k^*(x_k) = \min_{u_k \in U_k(x_k)}
+\Big[ g_k(x_k,u_k) + J_{k+1}^*\big(f_k(x_k,u_k)\big) \Big] \tag{1.4}
+$$
+
 - 含义：$J_k^*(x_k)$ 是从 $(k,x_k)$ 到终点、最优的 **cost-to-go** (1.5)–(1.6)。
 
 **正向构造最优控制**（在已知全部 $J_k^*$ 后）：
 
 $$
-
 u_k^* \in \arg\min_{u_k} \big[ g_k(x_k^*,u_k) + J_{k+1}^*(f_k(x_k^*,u_k)) \big], \quad
 x_{k+1}^* = f_k(x_k^*,u_k^*) \tag{1.7–1.8}
-
 $$
 
 **例 1.1.1 续**：图 1.1.6 自最短尾部子问题逐层反向填 $J_k^*$；最优总代价 10，控制序列为 CABD。手算可验证 (1.4) 的归纳结构。
@@ -156,18 +154,14 @@ $$
 **一步前瞻（suboptimal）**：
 
 $$
-
 \tilde u_k \in \arg\min_{u_k} \Big[ g_k(\tilde x_k,u_k) + \tilde J_{k+1}\big(f_k(\tilde x_k,u_k)\big) \Big], \quad
 \tilde x_{k+1}=f_k(\tilde x_k,\tilde u_k) \tag{1.9–1.10}
-
 $$
 
 **Q 因子**（确定性，式 1.11）：
 
 $$
-
 Q_k^*(x_k,u_k) = g_k(x_k,u_k) + J_{k+1}^*\big(f_k(x_k,u_k)\big).
-
 $$
 
 则 $J_k^*(x_k)=\min_{u_k} Q_k^*(x_k,u_k)$，且 Bellman 可**只写在 Q 上**（与 Watkins Q-learning 符号一脉）。  
@@ -191,34 +185,33 @@ $$
 ### 问题框架
 
 动力学为
-$$
 
+$$
 x_{k+1} = f_k(x_k, u_k, w_k), \quad w_k \sim P_k(\cdot \mid x_k, u_k),
-
 $$
+
 阶段代价可为 $g_k(x_k,u_k,w_k)$。**优化变量**为由反馈映射 $\mu_k$ 构成的策略 $\pi=\{\mu_0,\ldots,\mu_{N-1}\}$（$u_k=\mu_k(x_k)$），而非固定开环序列：在随机扰动下，控制器需根据**已实现状态**调整决策，开环序列在期望意义下通常次优。
 
 ### 主要内容
 
 - **期望总代价**（给定 $x_0$ 与策略 $\pi$）  
-  $$
 
-  J_\pi(x_0) = \mathbb{E}\Big[ g_N(x_N) + \sum_{k=0}^{N-1} g_k\big(x_k,\mu_k(x_k),w_k\big) \Big].
-  
 $$
+J_\pi(x_0) = \mathbb{E}\Big[ g_N(x_N) + \sum_{k=0}^{N-1} g_k\big(x_k,\mu_k(x_k),w_k\big) \Big].
+$$
+
 - **最优** $J^*(x_0)=\min_{\pi\in\Pi} J_\pi(x_0)$。  
 - **随机 Bellman**（式 1.12–1.13）：  
-  $$
 
-  J_N^*(x_N)=g_N(x_N),
-  
 $$
-  $$
+J_N^*(x_N)=g_N(x_N),
+$$
 
-  J_k^*(x_k) = \min_{u_k\in U_k(x_k)}
-  \mathbb{E}_{w_k}\Big[ g_k(x_k,u_k,w_k) + J_{k+1}^*\big(f_k(x_k,u_k,w_k)\big) \Big]. \tag{1.13}
-  
 $$
+J_k^*(x_k) = \min_{u_k\in U_k(x_k)}
+\mathbb{E}_{w_k}\Big[ g_k(x_k,u_k,w_k) + J_{k+1}^*\big(f_k(x_k,u_k,w_k)\big) \Big]. \tag{1.13}
+$$
+
   若每步 minimizer 为 $\mu_k^*(x_k)$，则 $\pi^*=\{\mu_k^*\}$ 最优。  
 - **随机 Q 因子**：(1.13) 右侧被最小化的量；Q 的 Bellman 形式期望可用**采样**近似——第 4–5 章 simulation-based 算法的数学支点。
 
@@ -277,12 +270,12 @@ $$
 - 化为 **$N$ 段 DP**：阶段 $k=0,\ldots,N-1$ 的状态为当前节点；控制 = 选 outgoing 弧；$N$ 步内允许自环 $a_{ii}=0$ 表“少走几步”。  
 - **余值含义**：$J_k^*(i)$ = 从 $i$ 出发、**恰用 $N-k$ 步**到 $t$ 的最优代价。  
 - **Bellman（Bellman–Ford 形）**  
-  $$
 
-  J_k^*(i) = \min_{j:(i,j)\text{ 弧}} \big[ a_{ij} + J_{k+1}^*(j) \big], \quad
-  J_{N-1}^*(i)=a_{it}.
-  
 $$
+J_k^*(i) = \min_{j:(i,j)\text{ 弧}} \big[ a_{ij} + J_{k+1}^*(j) \big], \quad
+J_{N-1}^*(i)=a_{it}.
+$$
+
 - **提前终止**：若某 $k$ 起 $J_k^*(i)=J_{k+1}^*(i)$ 对所有 $i$ 成立，则已得“真实最短距离”（不再依赖剩余步数）。
 
 #### 要点
@@ -306,12 +299,12 @@ $$
   - 从 $(u_1,\ldots,u_k)$ 只能扩展到可行 $u_{k+1}\in U_{k+1}(\cdot)$；  
   - 终端代价 $G(u)$（图 1.3.3）。  
 - **反向** (1.14)：  
-  $$
 
-  J_k^*(u_1,\ldots,u_k) = \min_{u_{k+1}} J_{k+1}^*(u_1,\ldots,u_k,u_{k+1}),
-  \quad J_N^*=G.
-  
 $$
+J_k^*(u_1,\ldots,u_k) = \min_{u_{k+1}} J_{k+1}^*(u_1,\ldots,u_k,u_{k+1}),
+\quad J_N^*=G.
+$$
+
 - **正向** (1.15) 构造 $u_1^*,\ldots,u_N^*$。  
 - **Rollout 预告**：用启发式 $\tilde J_{k+1}$ 替换 (1.15) 中的 $J_{k+1}^*$——固定前缀，用启发式补全后面，是强力的组合优化近似。
 
@@ -374,31 +367,30 @@ $$
 - 状态 $(x_k,y_k)$：$x_k$ 受 $u_k,w_k$ 影响；$y_k$ 只按 $P(y_{k+1}\mid x_k,\ldots)$ 演化，**控制不能直接改 $y_k$**（但可间接通过 $x_k$）。  
 - **停车（例 1.3.3）**：沿 $0,\ldots,N-1$ 车位，车库 $N$ 代价 $C$；位 $k$ 空闲概率 $p(k)$，观测到空闲才决定停或走。  
 - 先在完整 $(k,F)/(k,\bar F)$ 上写 DP，再化简为**标量**  
-  $$
 
-  \hat J_k = p(k) J_k^*(F) + (1-p(k)) J_k^*(\bar F),
-  
 $$
+\hat J_k = p(k) J_k^*(F) + (1-p(k)) J_k^*(\bar F),
+$$
+
   表示“到达 $k$ 尚未知空满前的期望余值”。  
 - 反向：  
-  $$
 
-  \hat J_{N-1} = p(N-1)\min\{c(N-1),C\} + (1-p(N-1))C,
-  
 $$
-  $$
+\hat J_{N-1} = p(N-1)\min\{c(N-1),C\} + (1-p(N-1))C,
+$$
 
-  \hat J_k = p(k)\min\{c(k),\hat J_{k+1}\} + (1-p(k))\hat J_{k+1}.
-  
 $$
+\hat J_k = p(k)\min\{c(k),\hat J_{k+1}\} + (1-p(k))\hat J_{k+1}.
+$$
+
 - **策略**：在 $k$ 若空闲且 $c(k)\le \hat J_{k+1}$ 则停。单调 $c(k)$ 时可有**阈值策略**（图 1.3.6：开到 165 再“见空就停”）。
 
 **一般公式 (1.18)**：对 $x_k$  alone 递推  
-$$
 
+$$
 \hat J_k(x_k) = \mathbb{E}_{y_k}\Big[ \min_{u_k} \mathbb{E}_{w_k}\big[ g_k + \hat J_{k+1}(f_k(\cdot)) \big] \Big],
-
 $$
+
 状态空间从 $n\times m$ 降到 $n$——**最优控仍可能是 $(x_k,y_k)$ 的函数**。
 
 #### 要点

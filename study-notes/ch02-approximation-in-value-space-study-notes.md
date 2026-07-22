@@ -120,10 +120,10 @@ $$
 **Q 回归流程**（Fig. 2.1.2）：
 
 1. 样本 $(x_k^s,u_k^s,x_{k+1}^s,g_k^s)$，$s=1,\ldots,q$；  
-   $\beta_k^s = g_k^s + \tilde J_{k+1}(x_{k+1}^s)$。 \tag{2.5}  
+   $\beta_k^s = g_k^s + \tilde J_{k+1}(x_{k+1}^s)$ (2.5)  
 2. 拟合 $\tilde Q_k(x_k,u_k,r_k)$：  
-   $\bar r_k \in \arg\min_r \sum_s \big(\tilde Q_k(x_k^s,u_k^s,r) - \beta_k^s\big)^2$。 \tag{2.6}  
-3. $\tilde\mu_k(x_k) \in \arg\min_u \tilde Q_k(x_k,u,\bar r_k)$。 \tag{2.7}
+   $\bar r_k \in \arg\min_r \sum_s \big(\tilde Q_k(x_k^s,u_k^s,r) - \beta_k^s\big)^2$ (2.6)  
+3. $\tilde\mu_k(x_k) \in \arg\min_u \tilde Q_k(x_k,u,\bar r_k)$ (2.7)
 
 **要点**：
 
