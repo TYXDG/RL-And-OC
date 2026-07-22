@@ -2,9 +2,6 @@
 Reinforcement learning and optimal control.pdf
 *.pdf
 
-# 与分章 clean 文本重复，可本地由 extract 脚本生成
-source/full.txt
-
 # Python
 __pycache__/
 *.pyc

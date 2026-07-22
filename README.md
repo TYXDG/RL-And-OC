@@ -9,7 +9,7 @@ Bertsekas, *Reinforcement Learning and Optimal Control*（2019 draft）个人学
 | 路径 | 用途 |
 |------|------|
 | [`study-notes/`](study-notes/) | **讲解型分节读书笔记**（主要成果） |
-| [`source/`](source/) | 从 PDF 抽取的正文：`ch01_clean.txt` … `ch05_clean.txt`、`full.txt`；长章可读 `source/parts/chXX_partNN.txt` |
+| [`source/`](source/) | 从 PDF 抽取的正文：`full.txt`（全书合并）、`ch01_clean.txt` … `ch05_clean.txt`；长章可读 `source/parts/chXX_partNN.txt` |
 | [`Reinforcement learning and optimal control.pdf`](Reinforcement%20learning%20and%20optimal%20control.pdf) | 原著 PDF（需重新抽取时对照） |
 | [`scripts/`](scripts/) | 维护用：`extract_chapters.py`、`split_chapter_parts.py`、`fix_study_notes_math.py` |
 
