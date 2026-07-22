@@ -2,7 +2,7 @@
 
 > **文献**：Dimitri P. Bertsekas, *Reinforcement Learning and Optimal Control*（Athena Scientific, 2019 draft）第 2 章。  
 > **文本依据**：`source/ch02_clean.txt` 及 `source/parts/ch02_part*.txt`。  
-> **定位**：在已知最优余值 $J_k^*$ 时，一步前瞻 (1.9) 给出最优控制；本章系统讨论以 $\tilde J_k$ 替代 $J_k^*$ 时的构造、实现与性能机理。有限时域为主，结论可延拓至第 4–5 章无限时域情形。
+> **定位**：在已知最优余值 $J_k^{*}$ 时，一步前瞻 (1.9) 给出最优控制；本章系统讨论以 $\tilde J_k$ 替代 $J_k^{*}$ 时的构造、实现与性能机理。有限时域为主，结论可延拓至第 4–5 章无限时域情形。
 
 ---
 
@@ -12,11 +12,11 @@
 
 在随机有限时域问题中，次优策略由逐步最小化定义：
 
-$$
-\tilde\mu_k(x_k) \in \arg\min_{u_k \in U_k(x_k)} \mathbb{E}\big\{ g_k(x_k,u_k,w_k) + \tilde J_{k+1}\big(f_k(x_k,u_k,w_k)\big) \big\}. \tag{2.1–2.2}
-$$
+```math
+\tilde\mu_k(x_k) \in \arg\min_{u_k \in U_k(x_k)} \mathbb{E}\big\{ g_k(x_k,u_k,w_k) + \tilde J_{k+1}\big(f_k(x_k,u_k,w_k)\big) \big\}. \qquad \text{(2.1–2.2)}
+```
 
-$\tilde J_{k+1}$ 近似 $J_{k+1}^*$；$\ell>1$ 时推广为多步前瞻（§2.2），终端仍用 $\tilde J_{k+\ell}$ 截断。
+$\tilde J_{k+1}$ 近似 $J_{k+1}^{*}$；$\ell>1$ 时推广为多步前瞻（§2.2），终端仍用 $\tilde J_{k+\ell}$ 截断。
 
 **两个正交的设计维度**（Fig. 2.1.1）：
 
@@ -90,9 +90,9 @@ $\tilde J_k(x_k,r_k)$，由特征 $\phi_k(x_k)$ 与训练算法确定 $r_k$。
 **确定性等价（assumed certainty equivalence）**  
 取扰动典型值 $\tilde w_k$，解确定性问题：
 
-$$
-\tilde\mu_k(x_k) \in \arg\min_{u_k \in U_k(x_k)} \Big[ g_k(x_k,u_k,\tilde w_k) + \tilde J_{k+1}\big(f_k(x_k,u_k,\tilde w_k)\big) \Big]. \tag{2.3}
-$$
+```math
+\tilde\mu_k(x_k) \in \arg\min_{u_k \in U_k(x_k)} \Big[ g_k(x_k,u_k,\tilde w_k) + \tilde J_{k+1}\big(f_k(x_k,u_k,\tilde w_k)\big) \Big]. \qquad \text{(2.3)}
+```
 
 $\tilde J$ 本身亦常由确定性子问题得到（与 §2.3 衔接）。
 
@@ -111,9 +111,9 @@ $\tilde J$ 本身亦常由确定性子问题得到（与 §2.3 衔接）。
 
 **目标**：估计
 
-$$
-Q_k(x_k,u_k) = \mathbb{E}\big\{ g_k(x_k,u_k,w_k) + \tilde J_{k+1}(f_k(x_k,u_k,w_k)) \big\}, \tag{2.4}
-$$
+```math
+Q_k(x_k,u_k) = \mathbb{E}\big\{ g_k(x_k,u_k,w_k) + \tilde J_{k+1}(f_k(x_k,u_k,w_k)) \big\}, \qquad \text{(2.4)}
+```
 
 并对各 $u_k$ 取 min。全控穷举 + 每对多次模拟往往不可行。
 
@@ -137,15 +137,15 @@ $$
 
 参数化策略 $\tilde\mu_k(x_k,r_k)$，在样本 $(x_k^s,u_k^s)$ 上最小化
 
-$$
-\sum_{s=1}^q \big\| u_k^s - \tilde\mu_k(x_k^s,r_k) \big\|^2 \tag{2.8}
-$$
+```math
+\sum_{s=1}^q \big\| u_k^s - \tilde\mu_k(x_k^s,r_k) \big\|^2 \qquad \text{(2.8)}
+```
 
 （可加正则）。$u_k^s$ 可来自专家，或来自值近似：
 
-$$
-u_k^s \in \arg\min_u \mathbb{E}\big\{ g_k(x_k^s,u,w_k) + \tilde J_{k+1}(f_k(x_k^s,u,w_k)) \big\}, \tag{2.9}
-$$
+```math
+u_k^s \in \arg\min_u \mathbb{E}\big\{ g_k(x_k^s,u,w_k) + \tilde J_{k+1}(f_k(x_k^s,u,w_k)) \big\}, \qquad \text{(2.9)}
+```
 
 或 $\arg\min_u \tilde Q_k(x_k^s,u,\bar r_k)$（(2.10)）。  
 **优势**：训练后在线执行 $\tilde\mu_k(x,r_k)$ 无需重复 (2.9) 级优化；与纯策略空间方法同享此性质。
@@ -154,11 +154,11 @@ $$
 
 ### §2.1.6 When is Approximation in Value Space Effective?
 
-**$ \tilde J_k \approx J_k^*$ 非必要**：若 $\tilde J_k(x)-J_k^*(x)\equiv c$，(2.1) 仍得最优策略。
+**$ \tilde J_k \approx J_k^{*}$ 非必要**：若 $\tilde J_k(x)-J_k^{*}(x)\equiv c$，(2.1) 仍得最优策略。
 
-**相对余值**：$\tilde J_k(x)-\tilde J_k(x') \approx J_k^*(x)-J_k^*(x')$ 是更合理的启发，但仍忽略首段代价在排序中的作用。
+**相对余值**：$\tilde J_k(x)-\tilde J_k(x') \approx J_k^{*}(x)-J_k^{*}(x')$ 是更合理的启发，但仍忽略首段代价在排序中的作用。
 
-**Q 误差斜率**（Fig. 2.1.3）：设 $u_k^*$ 最优、$\tilde u_k$ 最小化 $\tilde Q_k$。若 $Q_k(x_k,u)-\tilde Q_k(x_k,u)$ 在 $u_k^*,\tilde u_k$ 附近**变化平缓**（小“斜率”），则 $\tilde u_k$ 的 $Q_k$ 损失通常可控；若 $Q_k$ 与 $\tilde Q_k$ 仅差**与 $u$ 无关的常数**，两式 min 等价。**Advantage** 与 Q 差分在存在函数逼近误差时往往更稳健（第 3 章 §3.4）。
+**Q 误差斜率**（Fig. 2.1.3）：设 $u_k^{*}$ 最优、$\tilde u_k$ 最小化 $\tilde Q_k$。若 $Q_k(x_k,u)-\tilde Q_k(x_k,u)$ 在 $u_k^{*},\tilde u_k$ 附近**变化平缓**（小“斜率”），则 $\tilde u_k$ 的 $Q_k$ 损失通常可控；若 $Q_k$ 与 $\tilde Q_k$ 仅差**与 $u$ 无关的常数**，两式 min 等价。**Advantage** 与 Q 差分在存在函数逼近误差时往往更稳健（第 3 章 §3.4）。
 
 **局限**：缺乏通用的、与问题无关的次优性证书；评估策略质量仍多依赖问题结构与仿真。此为近似 DP/RL 的共性困难。
 
@@ -195,9 +195,9 @@ $\ell=2$ 时，内层 $\tilde J_{k+1}(x_{k+1})$ 本身可再为一步前瞻，�
 
 **部分确定性形式**：当前步保留 $w_k$ 的随机性，将 $w_{k+1},\ldots,w_{k+\ell-1}$ 固定为典型值；$\tilde J_{k+1}$ 由 $(\ell-1)$ 步**确定性**最短路得到，再算
 
-$$
+```math
 \tilde Q_k(x_k,u_k) = \mathbb{E}\big\{ g_k(x_k,u_k,w_k) + \tilde J_{k+1}(f_k(x_k,u_k,w_k)) \big\},
-$$
+```
 
 $\tilde\mu_k \in \arg\min_u \tilde Q_k(x_k,u)$——与 §2.3.2 确定性等价一致。
 
@@ -226,15 +226,15 @@ $\tilde\mu_k \in \arg\min_u \tilde Q_k(x_k,u)$——与 §2.3.2 确定性等价�
 
 **可分离近似**：
 
-$$
+```math
 \tilde J_k(x_1,\ldots,x_n)=\sum_{i=1}^n \tilde J_k^i(x_i).
-$$
+```
 
 一步前瞻选 $i$ 最大化（等价形式略去与 $i$ 无关项）：
 
-$$
+```math
 \tilde m_k^i(x_i)=\arg\max\Big\{R_i(x_i)-R^i(x_i)+\mathbb{E}[\tilde J_{k+1}^i(f^i(x_i,w_i))-\tilde J_{k+1}^i(f^i(x_i,w_i))]\Big\},
-$$
+```
 
 各 $\tilde J^i$ 来自**单项目**全视界子问题——经典 RMAB 启发式结构。
 
@@ -269,10 +269,10 @@ $$
 
 在 $x_k$，对每个 $u_k\in U_k(x_k)$，令 $x_{k+1}=f_k(x_k,u_k)$，基**启发式**（确定性下称 base heuristic）生成 $\{x_{k+1},\ldots,x_N\}$ 及控制，得 tail 代价。选最小者：
 
-$$
+```math
 \tilde\mu_k(x_k) \in \arg\min_{u_k} \tilde Q_k(x_k,u_k), \quad
-\tilde Q_k(x_k,u_k) = g_k(x_k,u_k) + H_{k+1}(f_k(x_k,u_k)), \tag{2.24–2.25}
-$$
+\tilde Q_k(x_k,u_k) = g_k(x_k,u_k) + H_{k+1}(f_k(x_k,u_k)), \qquad \text{(2.24–2.25)}
+```
 
 $H_{k+1}(x_{k+1})$ 为从 $x_{k+1}$ 起的启发式总代价（不含首项 $g_k$）。
 
@@ -284,9 +284,9 @@ $H_{k+1}(x_{k+1})$ 为从 $x_{k+1}$ 起的启发式总代价（不含首项 $g_k
 
 **序贯改进（sequentially improving）**（弱于序贯一致）：
 
-$$
-\min_{u_k} \big[ g_k(x_k,u_k) + H_{k+1}(f_k(x_k,u_k)) \big] \le H_k(x_k). \tag{2.29}
-$$
+```math
+\min_{u_k} \big[ g_k(x_k,u_k) + H_{k+1}(f_k(x_k,u_k)) \big] \le H_k(x_k). \qquad \text{(2.29)}
+```
 
 即“最优启发式 Q 因子 $\le$ 启发式总代价”。仍得 $J_{k,\tilde\pi}\le H_k$。
 
@@ -294,11 +294,11 @@ $$
 
 设 $J_{k,\tilde\pi}$ 为 rollout 策略从 $(k,x_k)$ 起的代价，$\hat J_k=H_k$ 为启发式总代价。基步 $k=N$：$J_{N,\tilde\pi}=g_N=H_N$。归纳步：对任意 $x_k$，记 $\tilde u_k=\tilde\mu_k(x_k)$，
 
-$$
+```math
 J_{k,\tilde\pi}(x_k)=g_k(x_k,\tilde u_k)+J_{k+1,\tilde\pi}(f_k(x_k,\tilde u_k))
 \le g_k(x_k,\tilde u_k)+H_{k+1}(f_k(x_k,\tilde u_k))
 =\min_u[g_k+H_{k+1}(f_k)] \le g_k(x_k,u_k^{\text{heur}})+H_{k+1}(f_k(x_k,u_k^{\text{heur}}))=H_k(x_k),
-$$
+```
 
 其中 $u_k^{\text{heur}}$ 为启发式在 $x_k$ 的首控；最后一步等式需**序贯一致**（启发式尾段 = 某 DP 策略尾段）。
 
@@ -338,9 +338,9 @@ $$
 
 **例 2.4.3（一步前瞻 MCTS + UCB）**：$m=|U_k(x_k)|$，对控 $i$ 维护样本均值 $\bar Q_{i,n}$ 与采样次数 $s_i$。下一采样控 $i_\ell$ 最小化 exploitation + exploration 指数，常取 $T_{i,n}=\bar Q_{i,n}$，UCB 探索项
 
-$$
+```math
 R_{i,n}=-c\sqrt{\frac{\log n}{s_i}}.
-$$
+```
 
 （最小化 cost 时符号与 reward 文献相反；Fig. 2.4.8。）
 
@@ -404,7 +404,7 @@ $$
 | 机制 | 核心对象 | 典型保证/风险 |
 |------|----------|----------------|
 | 一步/多步前瞻 | $\tilde J_{k+\ell}$ | Q 误差斜率小则控排序稳健；$\ell$ 过大 + 差终端可退化 |
-| 问题近似 | 简化问题的 $J^*$ | 启发式，需结构支持 |
+| 问题近似 | 简化问题的 $J^{*}$ | 启发式，需结构支持 |
 | Rollout | $H_k$ 来自基策略/启发式 | 序贯改进 $\Rightarrow$ 不劣于基；加固可弱前提 |
 | MPC | $\ell$ 步到 0 + 首控执行 | 约束能控 $\Rightarrow$ 有限总代价；未必到平衡点 |
 

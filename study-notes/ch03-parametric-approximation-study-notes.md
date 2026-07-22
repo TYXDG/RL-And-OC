@@ -32,17 +32,17 @@
 
 **一般形式**：
 
-$$
+```math
 \tilde J_k(x_k,r_k)=\hat J_k(\phi_k(x_k),r_k),
-$$
+```
 
 $\phi_k(x_k)=(\phi_{1,k},\ldots,\phi_{m,k})'$ 为**特征**；$\hat J_k$ 为读出头（常为线性）。
 
 **线性架构 (3.1)**：
 
-$$
+```math
 \tilde J_k(x_k,r_k)=r_k'\phi_k(x_k)=\sum_{\ell=1}^m r_{\ell,k}\,\phi_{\ell,k}(x_k).
-$$
+```
 
 几何上：$\tilde J_k$ 属于 $\{\phi_{\ell,k}\}$ 张成的子空间；$\phi_{\ell,k}$ 亦称 **basis functions**。
 
@@ -60,7 +60,7 @@ $$
 
 #### 要点
 
-- 最优 $J_k^*$ 可能高度非线性；特征应编码主要非线性，使 $\hat J_k$ 保持简单（常线性）。  
+- 最优 $J_k^{*}$ 可能高度非线性；特征应编码主要非线性，使 $\hat J_k$ 保持简单（常线性）。  
 - AlphaZero 等：**发现**特征而非 Tetris 式手工。
 
 #### 注意点
@@ -75,15 +75,15 @@ $$
 
 训练集 $(x^s,\beta^s)$，$s=1,\ldots,q$；$\beta^s\approx J(x^s)$（带噪）：
 
-$$
-\min_r \sum_{s=1}^q\big(\tilde J(x^s,r)-\beta^s\big)^2. \tag{3.2}
-$$
+```math
+\min_r \sum_{s=1}^q\big(\tilde J(x^s,r)-\beta^s\big)^2. \qquad \text{(3.2)}
+```
 
 **线性闭式 (3.3)**：
 
-$$
+```math
 r=\Big(\sum_s \phi(x^s)\phi(x^s)'\Big)^{-1}\sum_s \phi(x^s)\beta^s.
-$$
+```
 
 （设计矩阵满秩时。）
 
@@ -106,23 +106,23 @@ $$
 
 #### 问题 (3.4)
 
-$$
+```math
 \min_y F(y)=\sum_{i=1}^m f_i(y),
-$$
+```
 
 $y$ 为参数（$r$ 或 NN 权重）；$f_i$ 可微。可独立于 DP 阅读（非线性规划标准内容）。
 
 #### 全梯度 (3.5)
 
-$$
+```math
 y^{k+1}=y^k-\gamma^k\sum_{i=1}^m\nabla f_i(y^k).
-$$
+```
 
 #### 增量梯度 (3.6)
 
-$$
+```math
 y^{k+1}=y^k-\gamma^k\nabla f_{i_k}(y^k),
-$$
+```
 
 $i_k\in\{1,\ldots,m\}$ 按 **cyclic / uniform random / cyclic+shuffle** 选取。
 
@@ -139,8 +139,8 @@ $i_k\in\{1,\ldots,m\}$ 按 **cyclic / uniform random / cyclic+shuffle** 选取�
 
 #### 例 3.1.6
 
-$f(y)=\sum_i (c_i y-b_i)^2$。组件最小值 $y_i^*=b_i/c_i$；最小值 $y^*=\sum c_i b_i/\sum c_i^2$。  
-**Far-out region**（$y$ 在 $[\min y_i^*,\max y_i^*]$ 外）：各 $\nabla f_i$ 与 $\nabla f$ 同号，小步长下单步增量与全梯度进步相当。  
+$f(y)=\sum_i (c_i y-b_i)^2$。组件最小值 $y_i^{*}=b_i/c_i$；最小值 $y^{*}=\sum c_i b_i/\sum c_i^2$。  
+**Far-out region**（$y$ 在 $[\min y_i^{*},\max y_i^{*}]$ 外）：各 $\nabla f_i$ 与 $\nabla f$ 同号，小步长下单步增量与全梯度进步相当。  
 **Region of confusion**（$y$ 在组件最小值区间内）：增量步可能不下降 → **振荡**，需衰减 $\gamma^k$。  
 全梯度常数步长上界：$\gamma\le 1/\sum c_i^2$。
 
@@ -166,9 +166,9 @@ $f(y)=\sum_i (c_i y-b_i)^2$。组件最小值 $y_i^*=b_i/c_i$；最小值 $y^*=\
 
 ### 双参数 (3.17)
 
-$$
+```math
 \tilde J(x,v,r)=r'\phi(x,v),
-$$
+```
 
 $v=(A,b)$ 等定非线性映射；Fig 3.2.1。
 
@@ -206,13 +206,13 @@ $v=(A,b)$ 等定非线性映射；Fig 3.2.1。
 
 与精确 DP 相同：**$k=N-1$ 到 $0$** 反向。已知 $r_{k+1}$ 时：
 
-$$
-r_k\in\arg\min_r\sum_{s=1}^q\Big(\tilde J_k(x_k^s,r)-\beta_k^s\Big)^2, \tag{3.22}
-$$
+```math
+r_k\in\arg\min_r\sum_{s=1}^q\Big(\tilde J_k(x_k^s,r)-\beta_k^s\Big)^2, \qquad \text{(3.22)}
+```
 
-$$
+```math
 \beta_k^s=\min_{u\in U_k(x_k^s)}\mathbb{E}\Big\{g_k(x_k^s,u,w_k)+\tilde J_{k+1}(f_k(x_k^s,u,w_k),r_{k+1})\Big\}.
-$$
+```
 
 **$k=N-1$**：右端含 $g_N(f_{N-1}(\cdot))$ 而非 $\tilde J_N$。
 
@@ -234,19 +234,19 @@ $$
 
 ### 定义 (3.23)–(3.24)
 
-$$
-Q_k^*(x_k,u_k)=\mathbb{E}\big\{g_k(x_k,u_k,w_k)+J_{k+1}^*(f_k(\cdot))\big\},
-$$
+```math
+Q_k^{*}(x_k,u_k)=\mathbb{E}\big\{g_k(x_k,u_k,w_k)+J_{k+1}^{*}(f_k(\cdot))\big\},
+```
 
-$$
-J_k^*(x_k)=\min_{u_k} Q_k^*(x_k,u_k).
-$$
+```math
+J_k^{*}(x_k)=\min_{u_k} Q_k^{*}(x_k,u_k).
+```
 
 ### Q-Bellman (3.25)
 
-$$
-Q_k^*(x_k,u_k)=\mathbb{E}\Big\{g_k+\min_{u'}Q_{k+1}^*(f_k(\cdot),u')\Big\}.
-$$
+```math
+Q_k^{*}(x_k,u_k)=\mathbb{E}\Big\{g_k+\min_{u'}Q_{k+1}^{*}(f_k(\cdot),u')\Big\}.
+```
 
 可在 **Q 空间**直接 FVI，无需显式 $J_k$ 中间层。
 
@@ -261,9 +261,9 @@ $$
 
 ### 在线控 (3.30)
 
-$$
+```math
 \tilde\mu_k(x_k)\in\arg\min_u \tilde Q_k(x_k,u,r_k),
-$$
+```
 
 **执行控时不求期望**——期望已进训练。
 
@@ -277,7 +277,7 @@ $$
 
 ### Advantage updating [Bai93/94]
 
-拟合 $A_k=Q_k^*-\min_u Q_k^*$，消除与 $u$ 无关大常数对 LS 的干扰；与 §2.1.6 Q 误差斜率一致。
+拟合 $A_k=Q_k^{*}-\min_u Q_k^{*}$，消除与 $u$ 无关大常数对 LS 的干扰；与 §2.1.6 Q 误差斜率一致。
 
 ---
 

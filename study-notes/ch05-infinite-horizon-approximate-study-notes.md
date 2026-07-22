@@ -20,7 +20,7 @@
 
 ## §5.1 Approximation in Value Space — Performance Bounds
 
-无限时域值空间近似：先得 $\tilde J\approx J^*$，再一步或多步前瞻实现 $\tilde\mu$（Fig 5.1.1 与 Ch.2 Fig 2.1.1 同构）。$\ell$ 步前瞻的有效终端余值为 $T^{\ell-1}\hat J$（$\hat J$ 为初始猜测）。
+无限时域值空间近似：先得 $\tilde J\approx J^{*}$，再一步或多步前瞻实现 $\tilde\mu$（Fig 5.1.1 与 Ch.2 Fig 2.1.1 同构）。$\ell$ 步前瞻的有效终端余值为 $T^{\ell-1}\hat J$（$\hat J$ 为初始猜测）。
 
 **近似 PI 流程**（Ch.4 §4.6 同型）：生成 $\mu_0,\ldots,\mu_m$；近似评估 $\tilde J_{\mu_k}$；改进得 $\mu_{k+1}$；末策略评估作前瞻 $\tilde J$。**Rollout** = $m=0$ 的单次评估+改进特例。
 
@@ -32,17 +32,17 @@
 
 **$\ell$ 步前瞻策略** $\tilde\mu$：在 $i$ 上最小化
 
-$$
+```math
 \min_{\mu_0,\ldots,\mu_{\ell-1}} \mathbb{E}\Big[\sum_{k=0}^{\ell-1}\alpha^k g(i_k,\mu_k(i_k),j_k) + \alpha^\ell \tilde J(i_\ell)\Big],
-$$
+```
 
 仅执行首控；等价于 $T_{\tilde\mu}(T^{\ell-1}\tilde J)$ 所定义的贪心（算子记号见 Ch.4）。
 
 **Prop 5.1.1(a) / 4.6.1(a)**：
 
-$$
-\|J_{\tilde\mu}-J^*\|_\infty \le \frac{2\alpha^\ell}{1-\alpha}\|\tilde J-J^*\|_\infty. \tag{5.x / 4.38}
-$$
+```math
+\|J_{\tilde\mu}-J^{*}\|_\infty \le \frac{2\alpha^\ell}{1-\alpha}\|\tilde J-J^{*}\|_\infty. \qquad \text{(5.x / 4.38)}
+```
 
 **受限控集前瞻**：在 $U(i)\subset U(i)$ 上 min，若 $\hat J(i)\le \tilde J(i)+c$，则 $J_{\tilde\mu}(i)\le \hat J(i)+c/(1-\alpha)$（Prop 4.6.1(b)）——用启发式筛控再前瞻可省计算。
 
@@ -67,7 +67,7 @@ $$
 
 #### 性能界
 
-在序贯改进/SSP 或折扣假设下，$J_{\tilde\mu}\le J_{\bar\mu}$ 及 $\|J_{\tilde\mu}-J^*\|$ 上界见 **附录 5.9.2**（与 4.13.4 平行）。
+在序贯改进/SSP 或折扣假设下，$J_{\tilde\mu}\le J_{\bar\mu}$ 及 $\|J_{\tilde\mu}-J^{*}\|$ 上界见 **附录 5.9.2**（与 4.13.4 平行）。
 
 #### 注意点
 
@@ -81,21 +81,21 @@ $$
 
 **近似评估** (4.44) / (5.x)：
 
-$$
+```math
 \|\tilde J_{\mu_k}-J_{\mu_k}\|_\infty \le \delta.
-$$
+```
 
 **近似改进** (4.45)：
 
-$$
+```math
 \max_i\Big[ T_{\mu_{k+1}}\tilde J_{\mu_k}(i) - T\tilde J_{\mu_k}(i)\Big] \le \epsilon.
-$$
+```
 
 **Prop 5.1.4 / 4.6.4**（折扣）：
 
-$$
-\limsup_{k\to\infty}\|J_{\mu_k}-J^*\|_\infty \le \frac{\epsilon+2\alpha\delta}{(1-\alpha)^2}.
-$$
+```math
+\limsup_{k\to\infty}\|J_{\mu_k}-J^{*}\|_\infty \le \frac{\epsilon+2\alpha\delta}{(1-\alpha)^2}.
+```
 
 **典型行为**（Fig 5.1.4 / 4.6.4）：早期单调下降，进入宽度 $\approx(\epsilon+2\alpha\delta)/(1-\alpha)^2$ 的**误差带**后 $J_{\mu_k}$ 随机振荡；界常 pessimistic，实际带常更窄。
 
@@ -125,14 +125,14 @@ $$
 ### 理想误差界 (5.17)–(5.19)
 
 若 $\|\tilde J_{k+1}-T\tilde J_k\|_\infty\le\delta$ 对所有 $k,i$，则渐近  
-$\|\tilde J_k-J^*\|_\infty\le\delta/(1-\alpha)$，  
-$\|J_{\tilde\mu_k}-J^*\|_\infty\le 2\delta/(1-\alpha)^2$（$\tilde\mu_k$ 为对 $\tilde J_k$ 贪心）。
+$\|\tilde J_k-J^{*}\|_\infty\le\delta/(1-\alpha)$，  
+$\|J_{\tilde\mu_k}-J^{*}\|_\infty\le 2\delta/(1-\alpha)^2$（$\tilde\mu_k$ 为对 $\tilde J_k$ 贪心）。
 
 ### 例 5.2.1（与 4.4.1 同型）
 
 两状态、单策略、零阶段代价、$1\to2\to2\to\cdots$，折扣 $\alpha$。最小二乘 FVI 可令 $\tilde J_k$ 无界增长——**自然 LS 回归不保证** (5.19)。
 
-**脚注（加权）**：若按“长期重要性”加权，令 $\xi_2\gg\xi_1$，可使回归标量 $\zeta$ 满足 $\alpha\zeta<1$，保证 $\tilde J_k\to J^*$——说明**样本权重/分布**对 FVI 稳定性至关重要。
+**脚注（加权）**：若按“长期重要性”加权，令 $\xi_2\gg\xi_1$，可使回归标量 $\zeta$ 满足 $\alpha\zeta<1$，保证 $\tilde J_k\to J^{*}$——说明**样本权重/分布**对 FVI 稳定性至关重要。
 
 ### 实践要点
 
@@ -158,9 +158,9 @@ $\|J_{\tilde\mu_k}-J^*\|_\infty\le 2\delta/(1-\alpha)^2$（$\tilde\mu_k$ 为对 
 **(a) Critic**：在 $\mu_k$ 下采样代价，增量/LS 拟合 $\tilde J_{\mu_k}(i,r)$。  
 **(b) Actor**：
 
-$$
+```math
 \mu_{k+1}(i)\in\arg\min_{u\in U(i)}\sum_j p_{ij}(u)\big[g(i,u,j)+\alpha\tilde J_{\mu_k}(j,r)\big],
-$$
+```
 
 或在样本态 $i^s$ 上算 $u^s$ 再 $\mu_{k+1}(i,r)$ 回归（§2.1.5）。
 
@@ -178,25 +178,25 @@ $$
 
 样本 $(i^s,\beta^s)$，$\beta^s$ = 从 $i^s$ 起用 $\mu$ 仿真 $N$ 步折扣代价 + $\alpha^N \hat J(i_N)$：
 
-$$
+```math
 r\in\arg\min_r\sum_s\big(\tilde J_\mu(i^s,r)-\beta^s\big)^2.
-$$
+```
 
 $\hat J$ 可取上一策略评估、零、或问题近似——类似**乐观 PI** 终端。
 
 **增量梯度**：
 
-$$
+```math
 r_{k+1}=r_k-\gamma_k\nabla_{r}\big(\tilde J(i^s_k,r_k)-\beta^{s_k}\big)^2.
-$$
+```
 
 线性架构可闭式解。
 
 #### 改进 (5.23)
 
-$$
+```math
 \tilde\mu(i)\in\arg\min_u\sum_j p_{ij}(u)\big[g(i,u,j)+\alpha\tilde J(j,r)\big].
-$$
+```
 
 #### 轨迹复用与 bias–variance
 
@@ -217,9 +217,9 @@ $$
 
 三元组 $(i^s,u^s,\beta^s)$：首步用 $u^s$，其后 $\mu$ 共 $N$ 步，$\beta^s$ 估计 $N$ 阶段 Q：
 
-$$
+```math
 Q^N_\mu(i,u)=\sum_j p_{ij}(u)\big[g(i,u,j)+\alpha J_{\mu}^{N-1}(j)\big].
-$$
+```
 
 #### 改进 (5.27)
 
@@ -243,7 +243,7 @@ $\tilde\mu(i)=\arg\min_u \tilde Q_\mu(i,u,r)$。
 **Cost shaping**（Ch.4 §4.2）：  
 SSP：$\hat g(i,u,j)=g(i,u,j)+V(j)-V(i)$；  
 折扣：$\hat g=g+\alpha V(j)-V(i)$。  
-最优策略不变，但**次优策略**会变；$V$ 应接近 $J^*$ 或 $J_{\mu_k}$，使 $J^*-V$ 易逼近；可 NN 学 $V$ + 局部修正。
+最优策略不变，但**次优策略**会变；$V$ 应接近 $J^{*}$ 或 $J_{\mu_k}$，使 $J^{*}-V$ 易逼近；可 NN 学 $V$ + 局部修正。
 
 #### 探索
 
@@ -262,9 +262,9 @@ Q 评估：更需在 $(i,u)$ 空间探索。
 
 对架构 $\tilde J(\cdot,r)$，定义
 
-$$
+```math
 \mathcal{R}_\mu=\Big\{r\;\Big|\;\mu(i)=\arg\min_u\sum_j p_{ij}(u)[g+\alpha\tilde J(j,r)],\;\forall i\Big\}.
-$$
+```
 
 非乐观 PI：评估得唯一 $r_\mu$，若 $r_{\mu_k}\in\mathcal{R}_{\mu_{k+1}}$ 且永不出现 $r_\mu\in\mathcal{R}_\mu$，则策略在有限环上**循环**（Fig 5.3.3）。查表时 $r_\mu=J_\mu$，$r_\mu\in\mathcal{R}_\mu\Leftrightarrow J_\mu=TJ_\mu\Leftrightarrow\mu$ 最优；有函数逼近时最优性不再等价。
 
@@ -288,9 +288,9 @@ $$
 
 **SARSA（on-policy）**：TD 目标用**实际**下一动作 $u'$：
 
-$$
+```math
 \beta = g(i,u,j)+\alpha\tilde Q(j,u',r).
-$$
+```
 
 **Q-learning（off-policy 常见）**：目标用 $\min_v Q(j,v)$。  
 **DQN**：$\tilde Q(i,u,\theta)$ 为深度网络；**经验回放**打破样本相关；**目标网络**延迟更新 stabilizing（[GBC16]）。  
@@ -319,7 +319,7 @@ $$
 
 ## §5.6 Exact and Approximate Linear Programming
 
-Bellman 不等式 $J\le TJ$（分量形式）与线性目标 $\min\sum_i\beta_i J(i)$，$\beta_i>0$ 得 $J^*$（精确 formulation 下）。  
+Bellman 不等式 $J\le TJ$（分量形式）与线性目标 $\min\sum_i\beta_i J(i)$，$\beta_i>0$ 得 $J^{*}$（精确 formulation 下）。  
 **近似 LP**：$J(i,r)$ 低维参数化或随机约束子集；规模仍可能大。与某些对偶 RL 方法相关。
 
 ---

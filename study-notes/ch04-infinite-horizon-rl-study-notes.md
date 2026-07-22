@@ -24,9 +24,9 @@
 
 **猜想 (4.2)–(4.3)**（在适当假设下成立）：
 
-1. $J^*(i)=\lim_{N\to\infty} J_N(i)$；  
-2. Bellman：$J^*(i)=\min_u\sum_j p_{ij}(u)[g(i,u,j)+J^*(j)]$（SSP 含直达 $t$ 项）；  
-3. 逐点 min 得**平稳最优策略** $\mu^*$。
+1. $J^{*}(i)=\lim_{N\to\infty} J_N(i)$；  
+2. Bellman：$J^{*}(i)=\min_u\sum_j p_{ij}(u)[g(i,u,j)+J^{*}(j)]$（SSP 含直达 $t$ 项）；  
+3. 逐点 min 得**平稳最优策略** $\mu^{*}$。
 
 **转移 vs 系统方程**：$x_{k+1}=w_k$，$w_k$ 按 $p_{x_k w_k}(u_k)$ 取值——与 Ch.1 $f_k$ 表述等价。
 
@@ -47,23 +47,23 @@
 
 对 $i=1,\ldots,n$：
 
-$$
-J^*(i)=\min_{u\in U(i)}\Big[p_{it}(u)g(i,u,t)+\sum_{j=1}^n p_{ij}(u)\big(g(i,u,j)+J^*(j)\big)\Big].
-$$
+```math
+J^{*}(i)=\min_{u\in U(i)}\Big[p_{it}(u)g(i,u,t)+\sum_{j=1}^n p_{ij}(u)\big(g(i,u,j)+J^{*}(j)\big)\Big].
+```
 
-**三项解释**：(a) 本步进入 $t$ 的期望代价；(b) 本步进入非终止 $j$ 的阶段代价；(c) 下一状态余值（$J^*(t)=0$ 不入和）。
+**三项解释**：(a) 本步进入 $t$ 的期望代价；(b) 本步进入非终止 $j$ 的阶段代价；(c) 下一状态余值（$J^{*}(t)=0$ 不入和）。
 
 ### VI (4.5)
 
-$J_{k+1}(i)$ 用 (4.4) 右端，$J^*$ 换 $J_k$。收敛见 Prop 4.2.1。
+$J_{k+1}(i)$ 用 (4.4) 右端，$J^{*}$ 换 $J_k$。收敛见 Prop 4.2.1。
 
 ### 假设 4.2.1
 
 存在 $m$，使**任意策略**下 $m$ 步内未到 $t$ 的概率 $\le\rho<1$：
 
-$$
+```math
 \rho=\max_\pi\max_i P\{x_m\neq t\mid x_0=i,\pi\}<1.
-$$
+```
 
 则 $P\{x_{km}\neq t\}\le\rho^k\to 0$——视界随机但期望总代价有限。
 
@@ -73,13 +73,13 @@ $$
 
 ### 主要命题（附录 4.13.1）
 
-- VI 收敛到 $J^*$；  
+- VI 收敛到 $J^{*}$；  
 - Bellman 解唯一；  
 - 满足 Bellman min 的 $\mu$ 最优（Prop 4.2.2–4.2.4 型）。
 
 ### Cost shaping
 
-修改 $g\to\hat g=g+V(j)-V(i)$（SSP）不改变最优策略，改变 $J^*$ 数值；**近似 DP 次优策略**对 $V$ 敏感。
+修改 $g\to\hat g=g+V(j)-V(i)$（SSP）不改变最优策略，改变 $J^{*}$ 数值；**近似 DP 次优策略**对 $V$ 敏感。
 
 ### 与 Ch.1 归约
 
@@ -92,21 +92,21 @@ $$
 
 ### Bellman (4.12)
 
-$$
-J^*(i)=\min_u\sum_j p_{ij}(u)\big[g(i,u,j)+\alpha J^*(j)\big],\quad \alpha\in(0,1).
-$$
+```math
+J^{*}(i)=\min_u\sum_j p_{ij}(u)\big[g(i,u,j)+\alpha J^{*}(j)\big],\quad \alpha\in(0,1).
+```
 
 ### 主要结果
 
 - $T$ 为 $\alpha$-**压缩**（最大范数）：$\|TJ_1-TJ_2\|_\infty\le\alpha\|J_1-J_2\|_\infty$；  
-- VI 收敛；$J^*$ 唯一；  
+- VI 收敛；$J^{*}$ 唯一；  
 - $J_\mu$ 满足 $(I-\alpha P_\mu)J_\mu=g_\mu$。
 
 ### Q 因子与 Q-VI (4.17)
 
-$$
-Q^*(i,u)=\sum_j p_{ij}(u)\big[g(i,u,j)+\alpha J^*(j)\big],\quad J^*(i)=\min_u Q^*(i,u).
-$$
+```math
+Q^{*}(i,u)=\sum_j p_{ij}(u)\big[g(i,u,j)+\alpha J^{*}(j)\big],\quad J^{*}(i)=\min_u Q^{*}(i,u).
+```
 
 Q 空间 VI 为 Q-learning 基础。
 
@@ -129,8 +129,8 @@ $\tilde J_{k+1}\approx T\tilde J_k$ + 回归（Ch.3 §3.3 无限时域版）。�
 ### 理想界 (4.22)
 
 若 $\|\tilde J_{k+1}-T\tilde J_k\|_\infty\le\delta$，则  
-$\|\tilde J_k-J^*\|_\infty\le\delta/(1-\alpha)$，  
-$\|J_{\tilde\mu_k}-J^*\|_\infty\le 2\delta/(1-\alpha)^2$。
+$\|\tilde J_k-J^{*}\|_\infty\le\delta/(1-\alpha)$，  
+$\|J_{\tilde\mu_k}-J^{*}\|_\infty\le 2\delta/(1-\alpha)^2$。
 
 ### 例 4.4.1
 
@@ -148,15 +148,15 @@ $\|J_{\tilde\mu_k}-J^*\|_\infty\le 2\delta/(1-\alpha)^2$。
 
 **SSP 评估**：
 
-$$
+```math
 J_{\mu_k}(i)=\sum_j p_{ij}(\mu_k(i))\big[g(i,\mu_k(i),j)+J_{\mu_k}(j)\big].
-$$
+```
 
 **改进**：
 
-$$
+```math
 \mu_{k+1}(i)\in\arg\min_u\sum_j p_{ij}(u)\big[g(i,u,j)+J_{\mu_k}(j)\big].
-$$
+```
 
 若 $J_{\mu_{k+1}}=J_{\mu_k}$ 则停止，$\mu_k$ 最优。**折扣**评估含 $\alpha$ 因子 (4.25)。
 
@@ -186,7 +186,7 @@ Rollout = 一次评估+改进；PI = 重复至最优。
 
 ### §4.6.1 Limited Lookahead
 
-**Prop 4.6.1(a)**：$\ell$ 步前瞻 $\tilde\mu$ 满足 $\|J_{\tilde\mu}-J^*\|_\infty\le \frac{2\alpha^\ell}{1-\alpha}\|\tilde J-J^*\|_\infty$。
+**Prop 4.6.1(a)**：$\ell$ 步前瞻 $\tilde\mu$ 满足 $\|J_{\tilde\mu}-J^{*}\|_\infty\le \frac{2\alpha^\ell}{1-\alpha}\|\tilde J-J^{*}\|_\infty$。
 
 **Prop 4.6.1(b)**：控集 $U(i)\subset U(i)$，$\hat J\le\tilde J+c$ → $J_{\tilde\mu}(i)\le\hat J(i)+c/(1-\alpha)$。
 
@@ -196,7 +196,7 @@ Rollout = 一次评估+改进；PI = 重复至最优。
 
 ### §4.6.3 Approximate PI
 
-(4.44)–(4.45) → **Prop 4.6.4**：$\limsup\|J_{\mu_k}-J^*\|_\infty\le(\epsilon+2\alpha\delta)/(1-\alpha)^2$；Fig 4.6.4 振荡带。
+(4.44)–(4.45) → **Prop 4.6.4**：$\limsup\|J_{\mu_k}-J^{*}\|_\infty\le(\epsilon+2\alpha\delta)/(1-\alpha)^2$；Fig 4.6.4 振荡带。
 
 **Prop 4.6.5**：若 $\mu_k$ 收敛（聚合），界 $\to(\epsilon+2\alpha\delta)/(1-\alpha)$。
 
@@ -226,17 +226,17 @@ Critic：仿真 + LS/TD → $\tilde J_{\mu_k}$。Actor：Bellman 贪心或策略
 
 ## §4.8 Q-Learning
 
-$Q^*$ 满足 Q-Bellman；算子 $F$ 为 $\alpha$-收缩。
+$Q^{*}$ 满足 Q-Bellman；算子 $F$ 为 $\alpha$-收缩。
 
 **Watkins 更新**：采样 $(i_k,u_k)$，$j_k\sim p_{i_k\cdot}(u_k)$，
 
-$$
+```math
 Q_{k+1}(i_k,u_k)\leftarrow (1-\gamma^k)Q_k(i_k,u_k)+\gamma^k\big(g(i_k,u_k,j_k)+\alpha\min_v Q_k(j_k,v)\big).
-$$
+```
 
 **无模型**：仅需 $(i,u,g,j)$ 样本。
 
-**收敛（标准 SA）**：有限 MDP、各 $(i,u)$ 无限访问、$\sum_k\gamma^k=\infty$、$\sum_k(\gamma^k)^2<\infty$ 等 $\Rightarrow$ $Q_k\to Q^*$ w.p.1（[BeT96], [Ber12]）。
+**收敛（标准 SA）**：有限 MDP、各 $(i,u)$ 无限访问、$\sum_k\gamma^k=\infty$、$\sum_k(\gamma^k)^2<\infty$ 等 $\Rightarrow$ $Q_k\to Q^{*}$ w.p.1（[BeT96], [Ber12]）。
 
 **Off-policy**：行为策略可与 max-Q 目标不同；函数逼近时需修正（§4.9）。
 
@@ -248,9 +248,9 @@ $$
 
 ### TD(0)
 
-$$
+```math
 J(i_k)\leftarrow J(i_k)+\gamma^k\big(g_k+\alpha J(i_{k+1})-J(i_k)\big).
-$$
+```
 
 ### TD($\lambda$)
 
@@ -272,7 +272,7 @@ Backup = 单态 $(T_\mu J)(i)$ 或 $(TJ)(i)$；sweep = 全 $i$。
 
 ## §4.10 Exact and Approximate Linear Programming
 
-**精确 LP**：变量 $J(i)$，约束 $J(i)\ge\sum_j p_{ij}(u)[g+\alpha J(j)]$（或等价形式），$\min\sum_i\beta_i J(i)$，$\beta_i>0$ → 最优 $J^*$。
+**精确 LP**：变量 $J(i)$，约束 $J(i)\ge\sum_j p_{ij}(u)[g+\alpha J(j)]$（或等价形式），$\min\sum_i\beta_i J(i)$，$\beta_i>0$ → 最优 $J^{*}$。
 
 **近似 LP**：$J(i,r)$ 低维；或随机子集约束。变量数仍可能大。
 
