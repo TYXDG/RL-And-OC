@@ -1,35 +1,29 @@
-# 分节读书笔记（Study Notes）
+# 分节读书笔记
 
-本目录存放按 PDF 小节整理的**讲解型读书笔记**（主要内容、公式、要点与局限），正文依据 [`source/`](../source/)。语体为**讲义式学术中文**；公式使用 **`$...$` / `$$...$$`**。
+这里是按 PDF 小节写的读书笔记：每节有主要内容、公式和一点个人理解上的注意点。文字对照 [`source/`](../source/) 里的抽取正文，不是逐页 OCR 对照。
 
-源文献：Bertsekas, *Reinforcement Learning and Optimal Control*（2019 draft）。正文依据 `source/` 抽取文本。
+书是 Bertsekas 的 *Reinforcement Learning and Optimal Control*（2019 draft）。公式统一用 `$...$` 和 `$$...$$` 写，读起来像讲义，不太像题解册。
 
-## 文件
+## 各章文件
 
-| 文件 | 内容 |
-|------|------|
-| [`ch01-exact-dp-study-notes.md`](ch01-exact-dp-study-notes.md) | 第 1 章 Exact Dynamic Programming |
-| [`ch02-approximation-in-value-space-study-notes.md`](ch02-approximation-in-value-space-study-notes.md) | 第 2 章 Approximation in Value Space |
-| [`ch03-parametric-approximation-study-notes.md`](ch03-parametric-approximation-study-notes.md) | 第 3 章 Parametric Approximation |
-| [`ch04-infinite-horizon-rl-study-notes.md`](ch04-infinite-horizon-rl-study-notes.md) | 第 4 章 Infinite Horizon RL（理论） |
-| [`ch05-infinite-horizon-approximate-study-notes.md`](ch05-infinite-horizon-approximate-study-notes.md) | 第 5 章无限时域近似方法 |
+| 文件 | 对应章节 |
+|------|----------|
+| [`ch01-exact-dp-study-notes.md`](ch01-exact-dp-study-notes.md) | 第 1 章 Exact DP |
+| [`ch02-approximation-in-value-space-study-notes.md`](ch02-approximation-in-value-space-study-notes.md) | 第 2 章 值空间近似 |
+| [`ch03-parametric-approximation-study-notes.md`](ch03-parametric-approximation-study-notes.md) | 第 3 章 参数化近似 |
+| [`ch04-infinite-horizon-rl-study-notes.md`](ch04-infinite-horizon-rl-study-notes.md) | 第 4 章 无限时域（理论） |
+| [`ch05-infinite-horizon-approximate-study-notes.md`](ch05-infinite-horizon-approximate-study-notes.md) | 第 5 章 无限时域近似方法 |
 
-## 版权声明
+版权在原书，这里只是个人学习笔记，别当正式出版物用。
 
-仅供个人学习；原著 Copyright Dimitri P. Bertsekas / Athena Scientific。
+## 公式怎么预览
 
-## 在 Cursor 里正确预览公式
+**在 Cursor 里**开 Markdown 预览（`Ctrl+Shift+V`，Mac 用 `Cmd+Shift+V`）一般就能看见公式。行内用 `$...$`，单独一行的大公式用 `$$...$$`。正文里如果直接写 `x_k` 而不包在 `$` 里，下划线会被 Markdown 当成强调，看起来会怪。
 
-1. 打开 Markdown **预览**：`Ctrl+Shift+V`（Mac：`Cmd+Shift+V`），或侧边预览 `Ctrl+K V`。
-2. 本仓库笔记使用 **`$...$`（行内）** 与 **`$$...$$`（独立公式）**；不要用裸 `x_k`（下划线会被当成斜体）。
-3. 已在用户设置中启用 `"markdown.math.enabled": true`。若公式仍不渲染，在扩展市场安装 **Markdown Math** 后重开预览。
-4. 若文件曾被编辑器去掉反斜杠导致公式乱码，可在项目根运行：  
-   `python3 scripts/fix_study_notes_math.py`
+预览里公式还是不对的话，确认设置里开了 `markdown.math.enabled`，或者装个 Markdown Math 扩展再试。要是反斜杠被编辑器吃掉了，在项目根跑一下：
 
-## 在 GitHub 上正确显示公式
+```bash
+python3 scripts/fix_study_notes_math.py
+```
 
-GitHub 使用 MathJax，比 Cursor 更挑剔：
-
-- 块级公式：`$$` 单独一行，**公式中间不要空行**，结束 `$$` 也单独一行且**顶格写**（不要缩进在列表里）。
-- 式号请写在 `$...$` 或 `$$...$$` **内部**（或用正文 `(1.4)`），不要把 `\tag{...}` 留在 `$` 外面。
-- 推送前可运行 `python3 scripts/fix_study_notes_math.py` 做上述规范化。
+**在 GitHub 网页上**渲染规则和 Cursor 不完全一样：块级公式要把 `$$` 单独占一行，中间别插空行，结束的那对 `$$` 也顶格写（缩进在列表里容易整段变乱码）。式号要么写在公式里面，要么干脆用正文里的 `(1.4)`，别把 `\tag{...}` 留在 `$` 外面。改完笔记、推上去之前，同样可以用上面那个脚本扫一遍。

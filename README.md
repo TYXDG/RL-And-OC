@@ -1,30 +1,27 @@
-# RL and Optimal Control — 读书笔记仓库
+# RL and Optimal Control — 读书笔记
 
-Bertsekas, *Reinforcement Learning and Optimal Control*（2019 draft）个人学习笔记。
+自己在读 Bertsekas 的 *Reinforcement Learning and Optimal Control*（2019 draft），笔记和抽取文本放在这个仓库里方便对照和继续改。
 
-**说明**：本仓库含 2019 draft PDF 与 `source/` 抽取文本，仅供个人学习对照；**著作权归 Dimitri P. Bertsekas / Athena Scientific**。公开仓库请勿用于商业再分发。
+仓库里有 PDF 和从 PDF 抽出来的 `source/` 文本，都是学习用；书版权归 Dimitri P. Bertsekas / Athena Scientific，请勿拿去做商业再分发。
 
-## 目录结构
+## 里面有什么
 
-| 路径 | 用途 |
-|------|------|
-| [`study-notes/`](study-notes/) | **讲解型分节读书笔记**（主要成果） |
-| [`source/`](source/) | 从 PDF 抽取的正文：`full.txt`（全书合并）、`ch01_clean.txt` … `ch05_clean.txt`；长章可读 `source/parts/chXX_partNN.txt` |
-| [`Reinforcement learning and optimal control.pdf`](Reinforcement%20learning%20and%20optimal%20control.pdf) | 原著 PDF（需重新抽取时对照） |
-| [`scripts/`](scripts/) | 维护用：`extract_chapters.py`、`split_chapter_parts.py`、`fix_study_notes_math.py` |
+| 路径 | 干什么用 |
+|------|----------|
+| [`study-notes/`](study-notes/) | 分节读书笔记（主要看这个） |
+| [`source/`](source/) | 正文抽取：`ch01_clean.txt` … `ch05_clean.txt`，长章还可以拆成 `source/parts/` |
+| [`Reinforcement learning and optimal control.pdf`](Reinforcement%20learning%20and%20optimal%20control.pdf) | 原 PDF，要重新抽文本时对着看 |
+| [`scripts/`](scripts/) | 抽章节、拆 part、修公式格式之类的小脚本 |
 
-## 修改 / 续写笔记时（给 Agent）
+## 接着写笔记
 
-1. 读对应章 **`source/chNN_clean.txt`**（或按小节读 **`source/parts/`**）。
-2. 编辑 **`study-notes/chNN-*-study-notes.md`**，公式用 **`$...$`** / **`$$...$$`**。
-3. 若误用 `\(...\)`，运行：`python3 scripts/fix_study_notes_math.py`。
-4. 预览说明见 [`study-notes/README.md`](study-notes/README.md)。
+先看 `source/chNN_clean.txt`（或按小节看 `source/parts/`），再改 `study-notes/chNN-*-study-notes.md`。公式照旧用 `$` / `$$`；不小心写成 `\(...\)` 的话，跑 `python3 scripts/fix_study_notes_math.py` 能改回来。预览和 GitHub 上公式要注意什么，写在 [`study-notes/README.md`](study-notes/README.md) 里。
 
-## 重新从 PDF 抽取正文
+## 从 PDF 重新抽正文
 
 ```bash
-python3 scripts/extract_chapters.py   # 生成 source/*_clean.txt、full.txt
-python3 scripts/split_chapter_parts.py  # 生成 source/parts/
+python3 scripts/extract_chapters.py
+python3 scripts/split_chapter_parts.py
 ```
 
-（具体参数以各脚本内说明为准。）
+具体选项看脚本开头的注释就行。
