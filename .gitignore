@@ -1,7 +1,3 @@
-# 版权 / 体积：不公开推送原著 PDF
-Reinforcement learning and optimal control.pdf
-*.pdf
-
 # Python
 __pycache__/
 *.pyc

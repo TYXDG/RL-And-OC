@@ -2,7 +2,7 @@
 
 Bertsekas, *Reinforcement Learning and Optimal Control*（2019 draft）个人学习笔记。
 
-**说明**：本仓库为个人学习整理，**不包含**原著 PDF。抽取文本仅供与笔记对照；版权归 Dimitri P. Bertsekas / Athena Scientific。请自行通过正规渠道获取原书。
+**说明**：本仓库含 2019 draft PDF 与 `source/` 抽取文本，仅供个人学习对照；**著作权归 Dimitri P. Bertsekas / Athena Scientific**。公开仓库请勿用于商业再分发。
 
 ## 目录结构
 
