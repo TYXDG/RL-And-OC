@@ -49,22 +49,21 @@
 
 #### 主要内容
 
-1. **动力学**（式 1.1）  
+**动力学**（式 1.1）：
 
 ```math
 x_{k+1} = f_k(x_k, u_k), \quad k=0,\ldots,N-1.
 ```
 
-2. **约束**：$u_k \in U_k(x_k)$——允许控制可以依赖当前状态（例如不能超速、不能走进墙）。  
-3. **可加总代价**（式 1.2）  
+**约束**：$u_k \in U_k(x_k)$——允许控制可以依赖当前状态（例如不能超速、不能走进墙）。  
+**可加总代价**（式 1.2）：
 
 ```math
-J(x_0; u_0,\ldots,u_{N-1})
-= g_N(x_N) + \sum_{k=0}^{N-1} g_k(x_k, u_k).
+J(x_0; u_0,\ldots,u_{N-1}) = g_N(x_N) + \sum_{k=0}^{N-1} g_k(x_k, u_k).
 ```
 
-4. **最优值函数** $J^{*}(x_0) = \min J(\cdot)$（全书用 `min` 表示 inf，即使最优控制未必达到）。  
-5. **两条典型路线**  
+**最优值函数** $J^{*}(x_0) = \min J(\cdot)$（全书用 `min` 表示 inf，即使最优控制未必达到）。  
+**两条典型路线**  
    - **有限状态图**：节点 = 状态，弧 = 决策，权 = 阶段代价 → **最短路径**。  
    - **连续状态**：向量 $x_k \in \mathbb{R}^n$，常配合 LQ 结构（例 1.1.2 多段炉温）。
 
@@ -105,11 +104,10 @@ J(x_0; u_0,\ldots,u_{N-1})
 **反向递推**（算余值）：
 
 - 终端：$J_N^{*}(x_N) = g_N(x_N)$ (1.3)  
-- 对 $k=N-1,\ldots,0$：  
+对 $k=N-1,\ldots,0$：
 
 ```math
-J_k^{*}(x_k) = \min_{u_k \in U_k(x_k)}
-\Big[ g_k(x_k,u_k) + J_{k+1}^{*}\big(f_k(x_k,u_k)\big) \Big] \qquad \text{(1.4)}
+J_k^{*}(x_k) = \min_{u_k \in U_k(x_k)} \Big[ g_k(x_k,u_k) + J_{k+1}^{*}\big(f_k(x_k,u_k)\big) \Big] \qquad \text{(1.4)}
 ```
 
 - 含义：$J_k^{*}(x_k)$ 是从 $(k,x_k)$ 到终点、最优的 **cost-to-go** (1.5)–(1.6)。
@@ -117,8 +115,7 @@ J_k^{*}(x_k) = \min_{u_k \in U_k(x_k)}
 **正向构造最优控制**（在已知全部 $J_k^{*}$ 后）：
 
 ```math
-u_k^{*} \in \arg\min_{u_k} \big[ g_k(x_k^{*},u_k) + J_{k+1}^{*}(f_k(x_k^{*},u_k)) \big], \quad
-x_{k+1}^{*} = f_k(x_k^{*},u_k^{*}) \qquad \text{(1.7–1.8)}
+u_k^{*} \in \arg\min_{u_k} \big[ g_k(x_k^{*},u_k) + J_{k+1}^{*}(f_k(x_k^{*},u_k)) \big], \quad x_{k+1}^{*} = f_k(x_k^{*},u_k^{*}) \qquad \text{(1.7-1.8)}
 ```
 
 **例 1.1.1 续**：图 1.1.6 自最短尾部子问题逐层反向填 $J_k^{*}$；最优总代价 10，控制序列为 CABD。手算可验证 (1.4) 的归纳结构。
@@ -154,8 +151,7 @@ x_{k+1}^{*} = f_k(x_k^{*},u_k^{*}) \qquad \text{(1.7–1.8)}
 **一步前瞻（suboptimal）**：
 
 ```math
-\tilde u_k \in \arg\min_{u_k} \Big[ g_k(\tilde x_k,u_k) + \tilde J_{k+1}\big(f_k(\tilde x_k,u_k)\big) \Big], \quad
-\tilde x_{k+1}=f_k(\tilde x_k,\tilde u_k) \qquad \text{(1.9–1.10)}
+\tilde u_k \in \arg\min_{u_k} \Big[ g_k(\tilde x_k,u_k) + \tilde J_{k+1}\big(f_k(\tilde x_k,u_k)\big) \Big], \quad \tilde x_{k+1}=f_k(\tilde x_k,\tilde u_k) \qquad \text{(1.9-1.10)}
 ```
 
 **Q 因子**（确定性，式 1.11）：
@@ -194,22 +190,21 @@ x_{k+1} = f_k(x_k, u_k, w_k), \quad w_k \sim P_k(\cdot \mid x_k, u_k),
 
 ### 主要内容
 
-- **期望总代价**（给定 $x_0$ 与策略 $\pi$）  
+**期望总代价**（给定 $x_0$ 与策略 $\pi$）：
 
 ```math
 J_\pi(x_0) = \mathbb{E}\Big[ g_N(x_N) + \sum_{k=0}^{N-1} g_k\big(x_k,\mu_k(x_k),w_k\big) \Big].
 ```
 
 - **最优** $J^{*}(x_0)=\min_{\pi\in\Pi} J_\pi(x_0)$。  
-- **随机 Bellman**（式 1.12–1.13）：  
+**随机 Bellman**（式 1.12–1.13）：
 
 ```math
 J_N^{*}(x_N)=g_N(x_N),
 ```
 
 ```math
-J_k^{*}(x_k) = \min_{u_k\in U_k(x_k)}
-\mathbb{E}_{w_k}\Big[ g_k(x_k,u_k,w_k) + J_{k+1}^{*}\big(f_k(x_k,u_k,w_k)\big) \Big]. \qquad \text{(1.13)}
+J_k^{*}(x_k) = \min_{u_k\in U_k(x_k)} \mathbb{E}_{w_k}\Big[ g_k(x_k,u_k,w_k) + J_{k+1}^{*}\big(f_k(x_k,u_k,w_k)\big) \Big]. \qquad \text{(1.13)}
 ```
 
   若每步 minimizer 为 $\mu_k^{*}(x_k)$，则 $\pi^{*}=\{\mu_k^{*}\}$ 最优。  
@@ -269,11 +264,10 @@ J_k^{*}(x_k) = \min_{u_k\in U_k(x_k)}
 - 假设：**无负长度环**（否则可无限绕圈降代价）。  
 - 化为 **$N$ 段 DP**：阶段 $k=0,\ldots,N-1$ 的状态为当前节点；控制 = 选 outgoing 弧；$N$ 步内允许自环 $a_{ii}=0$ 表“少走几步”。  
 - **余值含义**：$J_k^{*}(i)$ = 从 $i$ 出发、**恰用 $N-k$ 步**到 $t$ 的最优代价。  
-- **Bellman（Bellman–Ford 形）**  
+**Bellman（Bellman–Ford 形）**：
 
 ```math
-J_k^{*}(i) = \min_{j:(i,j)\text{ 弧}} \big[ a_{ij} + J_{k+1}^{*}(j) \big], \quad
-J_{N-1}^{*}(i)=a_{it}.
+J_k^{*}(i) = \min_{j:(i,j)\text{ 弧}} \big[ a_{ij} + J_{k+1}^{*}(j) \big], \quad J_{N-1}^{*}(i)=a_{it}.
 ```
 
 - **提前终止**：若某 $k$ 起 $J_k^{*}(i)=J_{k+1}^{*}(i)$ 对所有 $i$ 成立，则已得“真实最短距离”（不再依赖剩余步数）。
@@ -298,11 +292,10 @@ J_{N-1}^{*}(i)=a_{it}.
   - 阶段 $k$ 的状态 = 前缀 $(u_1,\ldots,u_k)$；  
   - 从 $(u_1,\ldots,u_k)$ 只能扩展到可行 $u_{k+1}\in U_{k+1}(\cdot)$；  
   - 终端代价 $G(u)$（图 1.3.3）。  
-- **反向** (1.14)：  
+**反向** (1.14)：
 
 ```math
-J_k^{*}(u_1,\ldots,u_k) = \min_{u_{k+1}} J_{k+1}^{*}(u_1,\ldots,u_k,u_{k+1}),
-\quad J_N^{*}=G.
+J_k^{*}(u_1,\ldots,u_k) = \min_{u_{k+1}} J_{k+1}^{*}(u_1,\ldots,u_k,u_{k+1}), \quad J_N^{*}=G.
 ```
 
 - **正向** (1.15) 构造 $u_1^{*},\ldots,u_N^{*}$。  
@@ -366,14 +359,14 @@ J_k^{*}(u_1,\ldots,u_k) = \min_{u_{k+1}} J_{k+1}^{*}(u_1,\ldots,u_k,u_{k+1}),
 
 - 状态 $(x_k,y_k)$：$x_k$ 受 $u_k,w_k$ 影响；$y_k$ 只按 $P(y_{k+1}\mid x_k,\ldots)$ 演化，**控制不能直接改 $y_k$**（但可间接通过 $x_k$）。  
 - **停车（例 1.3.3）**：沿 $0,\ldots,N-1$ 车位，车库 $N$ 代价 $C$；位 $k$ 空闲概率 $p(k)$，观测到空闲才决定停或走。  
-- 先在完整 $(k,F)/(k,\bar F)$ 上写 DP，再化简为**标量**  
+先在完整 $(k,F)/(k,\bar F)$ 上写 DP，再化简为**标量**：
 
 ```math
 \hat J_k = p(k) J_k^{*}(F) + (1-p(k)) J_k^{*}(\bar F),
 ```
 
   表示“到达 $k$ 尚未知空满前的期望余值”。  
-- 反向：  
+反向：
 
 ```math
 \hat J_{N-1} = p(N-1)\min\{c(N-1),C\} + (1-p(N-1))C,

@@ -9,7 +9,6 @@ ROOT = Path(__file__).resolve().parents[1]
 NOTES = ROOT / "study-notes"
 
 DISPLAY_DELIM = re.compile(r"^\s*\$\$\s*$")
-MATH_FENCE = re.compile(r"^```math\s*$")
 
 
 def convert_latex_delimiters(text: str) -> str:
@@ -32,8 +31,48 @@ def brace_star_superscripts(text: str) -> str:
     return re.sub(r"\^(?!\{)\*", r"^{*}", text)
 
 
+def fix_bold_dollar_space(text: str) -> str:
+    return re.sub(r"\*\*\$\s+", "**$", text)
+
+
+def fix_text_en_dash(text: str) -> str:
+    def fix_match(m: re.Match[str]) -> str:
+        inner = m.group(1).replace("\u2013", "-").replace("\u2014", "-")
+        return r"\text{" + inner + "}"
+
+    return re.sub(r"\\text\{([^}]*)\}", fix_match, text)
+
+
+def demote_list_items_before_math_fences(text: str) -> str:
+    """GitHub: list + ```math often fails; use plain lines before fences."""
+    lines = text.splitlines()
+    out: list[str] = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        m_num = re.match(r"^\d+\.\s+(.+)$", line)
+        m_bul = re.match(r"^-\s+(.+)$", line)
+        content: str | None = None
+        if m_num:
+            content = m_num.group(1).strip()
+        elif m_bul:
+            content = m_bul.group(1).strip()
+        if content is not None:
+            j = i + 1
+            while j < len(lines) and not lines[j].strip():
+                j += 1
+            if j < len(lines) and lines[j].strip() == "```math":
+                if not content.endswith(("：", ":")):
+                    content += "："
+                out.append(content)
+                i += 1
+                continue
+        out.append(line)
+        i += 1
+    return "\n".join(out)
+
+
 def replace_display_tags(text: str) -> str:
-    """\\tag in fenced math is flaky on GitHub; use \\text{(no.)}."""
     return re.sub(
         r"\\tag\{([^}]+)\}",
         r"\\qquad \\text{(\1)}",
@@ -42,7 +81,6 @@ def replace_display_tags(text: str) -> str:
 
 
 def normalize_display_math(text: str) -> str:
-    """No blank lines inside display math; delimiters at column 0."""
     lines = text.splitlines()
     out: list[str] = []
     i = 0
@@ -81,7 +119,6 @@ def normalize_display_math(text: str) -> str:
 
 
 def convert_display_to_math_fences(text: str) -> str:
-    """GitHub: ```math blocks avoid list/paragraph clashes with $$."""
     lines = text.splitlines()
     out: list[str] = []
     i = 0
@@ -109,13 +146,27 @@ def convert_display_to_math_fences(text: str) -> str:
     return "\n".join(out)
 
 
+def collapse_math_fences(text: str) -> str:
+    """Single-line ```math bodies render more reliably on GitHub."""
+
+    def repl(m: re.Match[str]) -> str:
+        lines = [ln.strip() for ln in m.group(1).splitlines() if ln.strip()]
+        return "```math\n" + " ".join(lines) + "\n```"
+
+    return re.sub(r"```math\n(.*?)```", repl, text, flags=re.DOTALL)
+
+
 def process(text: str) -> str:
     text = convert_latex_delimiters(text)
     text = fix_orphan_tags(text)
     text = brace_star_superscripts(text)
+    text = fix_bold_dollar_space(text)
+    text = demote_list_items_before_math_fences(text)
     text = normalize_display_math(text)
     text = convert_display_to_math_fences(text)
     text = replace_display_tags(text)
+    text = fix_text_en_dash(text)
+    text = collapse_math_fences(text)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text
 

@@ -13,7 +13,7 @@
 在随机有限时域问题中，次优策略由逐步最小化定义：
 
 ```math
-\tilde\mu_k(x_k) \in \arg\min_{u_k \in U_k(x_k)} \mathbb{E}\big\{ g_k(x_k,u_k,w_k) + \tilde J_{k+1}\big(f_k(x_k,u_k,w_k)\big) \big\}. \qquad \text{(2.1–2.2)}
+\tilde\mu_k(x_k) \in \arg\min_{u_k \in U_k(x_k)} \mathbb{E}\big\{ g_k(x_k,u_k,w_k) + \tilde J_{k+1}\big(f_k(x_k,u_k,w_k)\big) \big\}. \qquad \text{(2.1-2.2)}
 ```
 
 $\tilde J_{k+1}$ 近似 $J_{k+1}^{*}$；$\ell>1$ 时推广为多步前瞻（§2.2），终端仍用 $\tilde J_{k+\ell}$ 截断。
@@ -154,7 +154,7 @@ u_k^s \in \arg\min_u \mathbb{E}\big\{ g_k(x_k^s,u,w_k) + \tilde J_{k+1}(f_k(x_k^
 
 ### §2.1.6 When is Approximation in Value Space Effective?
 
-**$ \tilde J_k \approx J_k^{*}$ 非必要**：若 $\tilde J_k(x)-J_k^{*}(x)\equiv c$，(2.1) 仍得最优策略。
+**$\tilde J_k \approx J_k^{*}$ 非必要**：若 $\tilde J_k(x)-J_k^{*}(x)\equiv c$，(2.1) 仍得最优策略。
 
 **相对余值**：$\tilde J_k(x)-\tilde J_k(x') \approx J_k^{*}(x)-J_k^{*}(x')$ 是更合理的启发，但仍忽略首段代价在排序中的作用。
 
@@ -270,8 +270,7 @@ $\tilde\mu_k \in \arg\min_u \tilde Q_k(x_k,u)$——与 §2.3.2 确定性等价�
 在 $x_k$，对每个 $u_k\in U_k(x_k)$，令 $x_{k+1}=f_k(x_k,u_k)$，基**启发式**（确定性下称 base heuristic）生成 $\{x_{k+1},\ldots,x_N\}$ 及控制，得 tail 代价。选最小者：
 
 ```math
-\tilde\mu_k(x_k) \in \arg\min_{u_k} \tilde Q_k(x_k,u_k), \quad
-\tilde Q_k(x_k,u_k) = g_k(x_k,u_k) + H_{k+1}(f_k(x_k,u_k)), \qquad \text{(2.24–2.25)}
+\tilde\mu_k(x_k) \in \arg\min_{u_k} \tilde Q_k(x_k,u_k), \quad \tilde Q_k(x_k,u_k) = g_k(x_k,u_k) + H_{k+1}(f_k(x_k,u_k)), \qquad \text{(2.24-2.25)}
 ```
 
 $H_{k+1}(x_{k+1})$ 为从 $x_{k+1}$ 起的启发式总代价（不含首项 $g_k$）。
@@ -295,9 +294,7 @@ $H_{k+1}(x_{k+1})$ 为从 $x_{k+1}$ 起的启发式总代价（不含首项 $g_k
 设 $J_{k,\tilde\pi}$ 为 rollout 策略从 $(k,x_k)$ 起的代价，$\hat J_k=H_k$ 为启发式总代价。基步 $k=N$：$J_{N,\tilde\pi}=g_N=H_N$。归纳步：对任意 $x_k$，记 $\tilde u_k=\tilde\mu_k(x_k)$，
 
 ```math
-J_{k,\tilde\pi}(x_k)=g_k(x_k,\tilde u_k)+J_{k+1,\tilde\pi}(f_k(x_k,\tilde u_k))
-\le g_k(x_k,\tilde u_k)+H_{k+1}(f_k(x_k,\tilde u_k))
-=\min_u[g_k+H_{k+1}(f_k)] \le g_k(x_k,u_k^{\text{heur}})+H_{k+1}(f_k(x_k,u_k^{\text{heur}}))=H_k(x_k),
+J_{k,\tilde\pi}(x_k)=g_k(x_k,\tilde u_k)+J_{k+1,\tilde\pi}(f_k(x_k,\tilde u_k)) \le g_k(x_k,\tilde u_k)+H_{k+1}(f_k(x_k,\tilde u_k)) =\min_u[g_k+H_{k+1}(f_k)] \le g_k(x_k,u_k^{\text{heur}})+H_{k+1}(f_k(x_k,u_k^{\text{heur}}))=H_k(x_k),
 ```
 
 其中 $u_k^{\text{heur}}$ 为启发式在 $x_k$ 的首控；最后一步等式需**序贯一致**（启发式尾段 = 某 DP 策略尾段）。

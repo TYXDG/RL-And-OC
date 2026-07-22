@@ -26,4 +26,4 @@
 python3 scripts/fix_study_notes_math.py
 ```
 
-**在 GitHub 网页上**最容易踩坑的两件事：有序/无序列表里嵌 `$$` 经常整段变成「x k + 1 = …」这种假公式；`$J_k^*$` 里的 `*` 会被 Markdown 删掉，变成 `$J_k^$` 或乱码。块级公式请用 ` ```math `，星号用 `^{*}`。改完跑一遍 `fix_study_notes_math.py` 会自动做这两类修正。
+**在 GitHub 网页上**请用文件页的 **Preview / 渲染视图**，不要看 Raw。容易踩坑：列表项下面直接接 `$$` 或缩进公式；`$J_k^*$` 里的 `*` 会被 Markdown 删掉。块级公式用顶格的 ` ```math `（单行 LaTeX），最优星号写 `^{*}`；列表里要先接公式的话，把那一项改成普通段落（脚本会自动处理）。改完跑 `python3 scripts/fix_study_notes_math.py`。
