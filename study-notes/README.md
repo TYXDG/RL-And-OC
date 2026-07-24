@@ -8,7 +8,7 @@
 
 | 文件 | 对应章节 |
 |------|----------|
-| [`ch01-exact-dp-study-notes.md`](ch01-exact-dp-study-notes.md) | 第 1 章 Exact DP |
+| [`ch01-exact-dp-study-notes.md`](ch01-exact-dp-study-notes.md) | 第 1 章 Exact DP（§1.1 确定性 Bellman/Q、§1.2 随机策略与 Q、§1.3 例题化简等） |
 | [`ch02-approximation-in-value-space-study-notes.md`](ch02-approximation-in-value-space-study-notes.md) | 第 2 章 值空间近似 |
 | [`ch03-parametric-approximation-study-notes.md`](ch03-parametric-approximation-study-notes.md) | 第 3 章 参数化近似 |
 | [`ch04-infinite-horizon-rl-study-notes.md`](ch04-infinite-horizon-rl-study-notes.md) | 第 4 章 无限时域（理论） |
