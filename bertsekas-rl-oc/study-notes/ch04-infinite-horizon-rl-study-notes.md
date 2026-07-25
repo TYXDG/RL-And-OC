@@ -1,6 +1,6 @@
 # 第 4 章 Infinite Horizon Reinforcement Learning — 分节笔记
 
-> **文献**：Ch.4（2019 draft，修订 2019-02）。**文本**：`source/ch04_clean.txt`。  
+> **文献**：Ch.4（2019 draft，修订 2019-02）。**文本**：[`../source/ch04_clean.txt`](../source/ch04_clean.txt)。  
 > **位置**：有限状态、**平稳** MDP 的精确理论（SSP、折扣）与 VI/PI/Q-learning/TD/LP/策略梯度；为 Ch.5 参数化与仿真实现提供定理与界。记号：$i,j\in\{1,\ldots,n\}$，终止态 $t$，$p_{ij}(u)$。
 
 ---

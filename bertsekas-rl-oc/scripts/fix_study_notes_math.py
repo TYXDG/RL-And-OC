@@ -5,8 +5,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-NOTES = ROOT / "study-notes"
+PROJECT = Path(__file__).resolve().parents[1]
+NOTES = PROJECT / "study-notes"
 
 DISPLAY_DELIM = re.compile(r"^\s*\$\$\s*$")
 
@@ -18,7 +18,6 @@ def convert_latex_delimiters(text: str) -> str:
 
 
 def fix_orphan_tags(text: str) -> str:
-    """\\tag{} after closing $ is plain text on GitHub — use (eq.no) instead."""
     return re.sub(
         r"(\$[^$\n]+\$)[。.]?\s*\\tag\{([^}]+)\}",
         r"\1 (\2)",
@@ -27,7 +26,6 @@ def fix_orphan_tags(text: str) -> str:
 
 
 def brace_star_superscripts(text: str) -> str:
-    """GitHub Markdown eats ^* inside $...$; use ^{} for optimal asterisk."""
     return re.sub(r"\^(?!\{)\*", r"^{*}", text)
 
 
@@ -44,7 +42,6 @@ def fix_text_en_dash(text: str) -> str:
 
 
 def demote_list_items_before_math_fences(text: str) -> str:
-    """GitHub: list + ```math often fails; use plain lines before fences."""
     lines = text.splitlines()
     out: list[str] = []
     i = 0
@@ -147,8 +144,6 @@ def convert_display_to_math_fences(text: str) -> str:
 
 
 def collapse_math_fences(text: str) -> str:
-    """Single-line ```math bodies render more reliably on GitHub."""
-
     def repl(m: re.Match[str]) -> str:
         lines = [ln.strip() for ln in m.group(1).splitlines() if ln.strip()]
         return "```math\n" + " ".join(lines) + "\n```"
@@ -172,7 +167,9 @@ def process(text: str) -> str:
 
 
 def main() -> None:
-    for md in sorted(NOTES.glob("ch*.md")):
+    for md in sorted(NOTES.glob("*.md")):
+        if md.name == "README.md":
+            continue
         original = md.read_text(encoding="utf-8")
         updated = process(original)
         if updated != original:
