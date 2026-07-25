@@ -16,8 +16,10 @@ Dimitri P. Bertsekas, *Reinforcement Learning and Optimal Control*（Athena Scie
 | 章节 | 状态 | 说明 |
 |------|------|------|
 | 第 1 章 Exact DP | 进行中 | §1.1–§1.2 已写细；§1.3–§1.4 有骨架 |
-| 第 2 章 值空间近似 | 进行中 | §2.0–§2.1 已扩充；§2.2 起有初稿 |
-| 第 3–5 章 | 有初稿 | 见 [`study-notes/`](study-notes/) 各文件 |
+| 第 2 章 值空间近似 | 较完整 | §2.0–§2.5 已扩充（前瞻、CEC、rollout、MPC 等） |
+| 第 3 章 参数化近似 | 较完整 | §3.1.3–§3.4 已扩充（增量法、NN、FVI、拟合 Q） |
+| 第 4 章 无限时域 | 较完整 | SSP/折扣、VI/PI、Q-learning、TD、界（§4.1–§4.13） |
+| 第 5 章 无限时域近似 | 较完整 | FVI、Actor–Critic、探索/振荡、DQN、TD 族（§5.1–§5.9） |
 
 ## 接着写笔记
 
