@@ -1,0 +1,1427 @@
+A Sequential Quadratic Programming Perspective on Optimal Control
+
+arXiv:2510.03475v1 [math.OC] 3 Oct 2025
+
+Abhijeet and Suman Chakravorty
+
+Abstract— This paper offers a unified perspective on different
+approaches to the solution of optimal control problems through
+the lens of constrained sequential quadratic programming.
+In particular, it allows us to find the relationships between
+Newton’s method, the iterative LQR (iLQR), and Differential
+Dynamic Programming (DDP) approaches to solve the problem.
+It is shown that the iLQR is a principled SQP approach, rather
+than simply an approximation of DDP by neglecting the Hessian
+terms, to solve optimal control problems that can be guaranteed
+to always produce a cost-descent direction and converge to an
+optimum; while Newton’s approach or DDP do not have similar
+guarantees, especially far from an optimum. Our empirical
+evaluations on the pendulum and cart-pole swing-up tasks serve
+to corroborate the SQP-based analysis proposed in this paper.
+
+I. I NTRODUCTION
+The study of iterative trajectory optimization has a long
+history in nonlinear control. Among the most influential
+methods are Differential Dynamic Programming (DDP),
+introduced in the 1960s [1], and iterative Linear Quadratic
+Regulation (iLQR), which later emerged as a simplified
+yet powerful alternative. Early research established DDP as
+a Newton-type algorithm for trajectory optimization with
+locally quadratic convergence [1, 2], whereas iLQR was
+designed around consistent first-order approximations that
+make it scalable and numerically reliable [3, 4]. Over the
+decades, these two approaches have become foundational
+tools for nonlinear control, trajectory optimization, and
+reinforcement learning.
+A large body of literature has analyzed their
+theoretical properties and limitations. Several works
+have emphasized the quadratic convergence of DDP
+under ideal assumptions [1, 2, 5], but have also noted
+the difficulties in practice when the algorithm’s backward
+pass combines second-order expansions with first-order
+terms. Such inconsistencies can compromise stability and
+necessitate heavy regularization [5]. An explicit link between
+DDP and Newton’s method was established in [5], and it is
+argued in [6] that, for discrete-time optimal control, DDP
+can outperform Newton’s method—retaining strong local
+convergence while offering greater robustness and efficiency
+under practical problem structures—thereby clarifying
+both its strengths and its limits away from the optimum.
+Other studies further examined mixed algorithms that blend
+Newton-type steps with more robust strategies, claiming
+improved stability in practice [6]. For rigid-body systems,
+accelerated second-order DDP has been explored [7].
+The authors are with the Department of Aerospace Engineering,
+Texas A&M University, College Station, TX 77843 USA. {abhinir,
+schakrav}@tamu.edu
+
+Meanwhile, extensions such as iterative Linear Quadratic
+Gaussian (iLQG) [3] and control-limited iLQR [8] have
+reinforced the importance of iLQR in stochastic and
+constrained settings. Beyond classical control, iLQR-based
+approaches have also been integrated into policy search [9],
+legged locomotion [10], and optimization-based planning
+and feedback design [11]. Related constrained/unscented
+formulations have also been studied [12].
+In contrast to these developments, the adoption of DDP
+has been more domain-specific. In aerospace engineering, for
+instance, DDP has been applied to trajectory optimization
+in astrodynamics and spacecraft guidance, where its
+second-order structure can be leveraged in high-precision
+planning [13, 14, 15]. Beyond astrodynamics, DDP has been
+used for complex robotic systems [16], and planetary landing
+problems [17], demonstrating its utility in solving nonlinear,
+constrained, and multi-phase optimization problems. While
+effective in these contexts, these studies also highlight
+the algorithm’s sensitivity to problem structure and its
+dependence on strong regularization, particularly when the
+local quadratic models become inconsistent.
+Albeit owing its inception to interpretation as an
+approximation of DDP by neglecting the second-order
+dynamics terms, we show that iLQR is a principled
+algorithm which can be derived independently of DDP and
+that often outperforms DDP in practice. The current work
+reveals a striking contrast between the two methods. DDP
+is theoretically appealing because of its use of second-order
+expansions and the possibility of quadratic convergence near
+an optimum owing to its similarity to Newton’s method.
+However, the inconsistency of its backward pass can yield
+unreliable cost predictions, non-descent directions, or even
+divergence. The iLQR, by contrast, employs a consistent
+first-order approximation for both linear and quadratic
+terms, ensuring guaranteed descent directions. Although
+often described as a simplification of DDP, iLQR is a
+complete algorithm in its own right, with strong theoretical
+guarantees and practical advantages that frequently outweigh
+the appeal of DDP especially when far from an optimum.
+Contributions. In this paper, we revisit the solution of
+optimal control problems from both theoretical and empirical
+perspectives. We analyze optimal control methods within a
+sequential quadratic programming (SQP) framework, which
+provides a unifying lens for understanding algorithms for
+solving these problems. Our analysis is inspired, in part, by
+the broader nonlinear programming literature, where the role
+
+of second-order information and consistency in SQP-type
+algorithms has been carefully studied [18]. The critical
+insight is that the Newton step in a constrained optimization
+problem is equivalent to solving a QP, which reduces to an
+LQR problem for optimal control. The SQP formulation
+allows us to derive theoretical convergence guarantees for
+iLQR and show that it is a principled approach to reduce
+the cost while satisfying the dynamical constraints. As a
+corollary, we also develop the exact Newton step to solve
+the optimal control problem, termed Newton LQR, which is
+different from the approach in the reference [5]. It is shown
+that the Newton LQR cannot be guaranteed to converge
+beacuse of the lack of a guaranteed descent direction, far
+from an optimum, owing to the Hessian terms. We also
+show that the DDP can be considered an approximation of
+the Newton LQR close to an optimum, and thus, has no
+guarantees of convergence far from an optimum. Through
+experiments on pendulum and cart-pole swing-up tasks, we
+demonstrate how these structural differences manifest in
+practice. The theoretical and empirical results suggest that
+iLQR often delivers more reliable and effective solutions
+than DDP while requiring far less computation owing
+to the absence of the Hessians of the dynamics in the
+computations, thus showing that in the case of solving
+optimal control problems, “less is more”. In contrast to our
+prior work [19] that studied the convergence of iLQR, this
+work proposes a unified SQP based framework to study
+algorithms to solve optimal control problems, and allows
+us to carefully understand the relationships between the
+Newton’s method, DDP and iLQR for solving optimal
+control problems, theoretically as well as empirically. Most
+importantly, it provides critical insight into which of these
+should be preferred and why?
+The remainder of the paper is organized as follows. Section II introduces the preliminaries and problem formulation.
+Section III develops an optimal control perspective using
+Sequential Quadratic Programming (SQP), providing the
+theoretical framework for our analysis. Section IV presents
+numerical comparisons on benchmark problems. Section V
+concludes with insights for the development of future trajectory optimization methods.
+II. P RELIMINARIES
+Consider the discrete-time, finite-horizon optimal control
+problem
+T −1
+
+min J =
+
+T −1
+{ut }t=0
+
+∑ c(xt , ut ) + CT (xT ),
+
+(1)
+
+t=0
+
+subject to the nonlinear dynamics
+xt+1 = f (xt , ut ),
+
+t = 0, 1, . . . , T − 1,
+
+(2)
+
+with given x0 ∈ Rn , states xt ∈ Rn , and controls ut ∈ Rm .
+The stage cost is c : Rn × Rm → R and the terminal cost
+is CT : Rn → R. We assume f , c,CT are twice continuously
+differentiable and that the control curvature is uniformly
+
+positive definite (e.g., an Rk ≻ 0 term in c) so that local
+control updates are well-posed.
+Given a nominal trajectory {(xt , ut )} satisfying (2), we
+denote perturbations by δ xt := xt − xt and δ ut := ut − ut . Linearizations use the Jacobians fx (xt , ut ), fu (xt , ut ), and cost
+derivatives are written compactly as cxt , cut , cxt ,xt , cxt ,ut , cut ,ut
+and CT,x ,CT,xx , all evaluated along the nominal.
+We emphasize the structural distinction that drives the
+subsequent analysis: iLQR employs a first-order model of
+the dynamics together with a quadratic model of the cost,
+whereas DDP mixes second-order state information with
+first-order control terms. Casting the local step induced by
+(1)–(2) as a quadratic program with linearized dynamics
+constraints provides a unified SQP viewpoint. In the next
+section, we use this QP/SQP formulation to make precise
+how these modeling choices govern descent directions, step
+acceptance, and convergence guarantees.
+III. O PTIMAL C ONTROL : AN SQP P ERSPECTIVE
+In the following, we study the solution to an optimal
+control problem from an SQP perspective utilizing the unique
+features of the optimal control problem. However, first, we
+develop some basic SQP background for the application to
+optimal control.
+A. SQP Foundations
+Consider the following constrained optimization problem:
+min c(x) s.t.
+x
+
+h(x) = 0.
+
+The necessary conditions are obtained by forming the
+augmented Lagrangian:
+L = c+λh
+and setting
+
+∂L
+=0
+∂x
+
+and
+
+∂L
+= 0,
+∂λ
+
+yielding:
+cx + λ ∗ hx = 0, h(x∗ ) = 0,
+at a minimum (stationary point) (x∗ , λ ∗ ).
+In order to solve this problem, one can use first- or secondorder methods. In the following, we consider the secondorder Newton method to solve the problem.
+Suppose that (x̄, λ̄ ) is the current solution to the problem.
+We then expand the Lagrangian L to second order around
+the nominal (x̄, λ̄ ) to yield:
+
+L (x, λ ) = c + λ h = c̄ + λ̄ h̄ + (cx δ x + λ̄ hx δ x)
+
+1
++ δ x′ cxx + λ̄ hxx δ x + δ x′ hx δ λ + h̄′ δ λ
+2
+≡ L¯ + ∆L ,
+where c̄ = c(x̄), h̄ = h(x̄), L¯ = c̄ + λ̄ h̄ and gx , gxx denote
+the gradient and Hessian of a function at the given nominal
+point x̄.
+In Newton’s method, one optimizes the (∆L ) part in terms
+of the perturbations (δ x, δ λ ) and updates the solution as:
+x = x̄ + δ x,
+
+λ = λ̄ + δ λ .
+
+The necessary conditions for obtaining the optimum of
+∆L in terms of δ x, δ λ are obtained by setting
+∂ (∆L )
+=0
+∂ (δ x)
+
+The necessary conditions for this QP are:
+cx +Cxx δ x + hx λ = 0,
+
+(5)
+
+h̄ + hx δ x = 0.
+
+(6)
+
+∂ (∆L )
+= 0,
+∂ (δ λ )
+
+and
+
+Consider the solution δ x to the necessary conditions
+above, then:
+
+yielding:
+
+cxx + λ̄ hxx
+hx
+
+hx
+0
+
+"
+
+δx
+
+#
+=
+
+"
+#
+−cx − λ̄ hx
+
+δ x′ (cx +Cxx δ x + hx λ ) = 0.
+
+−h̄
+
+δλ
+
+This implies
+
+However, taking the λ̄ hx term to the LHS yields:
+#
+
+" δx # "
+−cx
+cxx + λ̄ hxx hx
+=
+hx
+0 λ̄ + δ λ
+−h̄
+
+
+δ x′ cx = − δ x′Cxx δ x + δ x′ hx λ .
+
+Here, note that λ = λ̄ + δ λ is simply the new λ .
+However, the necessary conditions above are simply the
+solution to the QP problem:
+
+min cx δ x + 21 δ x′ cxx + λ̄ hxx δ x
+δx
+
+s.t.
+
+hx δ x + h̄ = 0.
+
+But since δ x satisfies the constraint δ x′ hx = −h̄ = 0, we
+get
+δ x′ cx = −δ x′Cxx δ x < 0 if Cxx > 0.
+Since c(x) is a cost function by design, it is a reasonable
+assumption that Cxx > 0 for all points x.
+Hence, the solution to the modified QP (4) is always a
+descent direction for the cost function. Furthermore,
+
+(3)
+
+h(x̄ + δ x) ≈ h(x̄) + hx δ x = 0
+
+Hence, the Newton step can be accomplished by solving
+the above QP for the solution (δ xq , λ q ) and updating the
+solution as:
+x = x̄ + δ xq , λ = λ q .
+
+if δ x is small, and thus the update x = x̄ + δ x also satisfies
+the constraint. If δ x is not small enough, we can do a line
+search using a parameter α ∈ (0, 1] such that
+
+Thus, the original constrained optimization can be solved
+by solving a sequence of QP problems above, and this will
+be termed as the Newton SQP approach.
+However, in general, it is not advisable
+ to use the “true”
+Hessian of the Lagrangian cxx + λ̄ hxx in the QP unless one
+is close to an optimum.
+To see this, note
+ that
+ in the constrained case, the descent
+δx
+direction δ X =
+is given by:
+δλ
+
+and thus x = x̄ + αδ x is feasible.
+Hence, if we have a feasible solution, the modified QP
+always gives a descent direction for the cost while ensuring
+that the solution remains feasible if allied with a suitable line
+search approach. The development above can be summarized
+as the following result:
+
+δ X = (∇2 L )−1 ∇L ,
+and
+
+
+c + λ̄ hxx
+∇ L = xx
+hx
+
+hx
+0
+
+2
+
+⊁0
+
+B. Application to Optimal Control
+
+δ X ′ ∇L = ∇L ′ (∇2 L )−1 ∇L > 0.
+
+δx
+
+′
+
+δ x Cxx δ x
+
+hx δ x + h̄ = 0.
+
+Consider the optimal control problem:
+T −1
+
+min
+
+∑ c(xt , ut ) + cT (xT ),
+
+{ut } t=0
+
+subject to
+
+However, if ∇2 L ⊁ 0, there is no such guarantee.
+Thus, in order to be able to use the SQP approach, it
+becomes critical that one be able to ensure that the QP
+solution is a descent direction for the cost function.
+Consider now a modified problem (QP):
+min
+
+Proposition 1: Consider the modified QP (4). Given Cxx ≻
+0, the solution to the QP, δ x, is always a descent direction
+for the cost function c(x). Furthermore, the new solution
+x = x̄+αδ x can be made feasible, i.e., h(x) = 0, by a suitable
+choice of the line-search parameter α ∈ (0, 1].
+
+
+
+if the current solution is far from an optimum.
+If the Hessian ∇2 L ≻ 0, the Newton direction can be
+assured to be a descent direction, since then:
+
+c′x δ x + 12
+
+h(x) = h(x̄ + αδ x) ≈ h(x̄) + αhx δ x = 0,
+
+xt+1 = f (xt , ut ).
+For simplicity, we shall assume the following structure for
+the cost and the dynamics.
+Assumption 1: The cost
+c(x, u) = l(x) + 12 u′ Ru,
+with R > 0, and lxx ≥ 0 given any x.
+
+(4)
+
+We make the assumption that h(x̄) = h̄ = 0, i.e., our current
+estimate is feasible.
+
+Assumption 2: The dynamics are affine in the control
+input:
+xt+1 = f¯(xt ) + ḡ(xt )ut .
+
+We do the following development for scalar state and control
+pair (x, u) to simplify the notation, but the results can be
+easily generalized to the vector case. A final note here is
+that by following the dynamics, a feasible trajectory (x̄t , ūt )
+can always be generated.
+Next, let (x̄t , ūt , λ̄t ) be the current solution to the problem.
+Consider the following LQR problems linearized around
+the current (x̄t , ūt ):
+
+the Newton LQR (7) with the Newton SQP (3), it follows
+that the Newton LQR need not result in a descent direction,
+especially when far from an optimum.
+Finally, a note regarding the line search in ILQR is due here.
+Typically, the updated control δ ut is applied to the original
+nonlinear system along the nominal to generate a new
+nominal trajectory: xt+1 = x̄t + δ xt+1 = f (x̄t + αδ xt , ūt + δ ut )
+starting at α = 1 and with δ x0 = 0. The solution is accepted
+if the new cost satisfies the following condition:
+T −1 
+′
+′
+′
+1
+1
+Jk+1 − Jk
+min ∑ lxt δ xt + ūt Rδ ut + + 2 δ xt lxt ,xt δ xt + 2 δ ut R δ ut
+> σ > 0,
+δ ut t=0
+αdx′ ∇Jk
+ ′ 
+ 
+δ xt
+fxt xt fxt ut δ xt
+λ̄
++ t+1
++ cT,x δ xT + 12 δ xT′ cT,xx δ xT , for some user-defined σ , where Jk , ∇Jk , represent the
+2
+δ ut
+fut xt
+0
+δ ut
+cost/ cost gradient at iteration k, while Jk+1 represents the
+δ xt+1 = fxt δ xt + fut δ ut . cost under the updated control sequence. Note that the
+(7) denominator above represents the cost change if linearity
+holds. If the inequality above is not satisfied, α is reduced
+and
+till the inequality is satisfied (via a line search): that this
+
+T −1 
+′
+′
+′
+is always possible is due to the fact that the direction
+1
+1
+min ∑ lxt δ xt + ūt R δ ut + 2 δ xt lxt ,xt δ xt + 2 δ ut R δ ut
+δ ut t=0
+dx is a cost descent direction. In essence, the feasibility
+is maintained by generating the new trajectory using the
++cT,x δ xT + 12 δ xT′ cT,xx δ xT ,
+nonlinear dynamics, while the line-search assures us that we
+δ xt+1 = fxt δ xt + fut δ ut .
+reach a better solution in terms of the cost. The development
+(8)
+above can be summarized as follows.
+Note now that the first Newton LQR problem (7) corresponds to the Newton SQP problem (3), and the second
+iLQR case (8) corresponds to the modified SQP (4).
+The solution to the LQR problems is given by (lack
+of space precludes a detailed derivation but is relatively
+straightforward since these are simply LQR problems):
+
+Proposition 2: The solution to the ILQR problem is
+always a descent direction for the cost c(x, u) and the next
+solution can be made feasible via a suitable line-search
+procedure. In contrast, it is not necessary that the solution
+to the Newton LQR be a descent direction.
+
+Remark 1: Albeit paucity of space does not allow us to
+show the convergence proof for iLQR, it follows under
+λt = −vt −Vt δ xt , with λT = −CT,x −CT,xx δ xT ,
+standard assumptions (see [19]).
+δ ut = −kt − Kt δ xt ,
+Remark 2: In reference [5], the author proposes a stagewise
+Newton procedure to find the Newton direction for the
+where the solution to the Newton LQR (7) is given by:
+optimal control problem posed in this paper. In that work, the
+vt = ℓxt + fx′t vt+1
+author takes a terminal cost/ Mayer approach to the problem
+′
+′
+′
+−1 ′
+and poses the problem as an unconstrained problem, unlike
+−( fxt Vt+1 fut + λ̄t+1 fxt ut ) (R + fut Vt+1 fut ) ( fut vt+1 + Rūt ),
+the constrained SQP route taken in this work. A careful look
+Vt = ℓxt ,xt + λ̄t+1 fxt ,xt + fx′t Vt+1 fxt
+at the equations in that paper clearly shows that they are
+−( fx′t Vt+1 fut + λ̄t+1 fxt ut )′ (R + fu′ t Vt+1 fut )−1
+not the same as the equations we have for Newton LQR
+above. In particular, rather than the variables λ̄t being the
+( fu′ t Vt+1 fxt + λ̄t+1 fxt ut ),
+multipliers from the previous iteration, they are replaced
+′
+−1
+′
+kt = (R + fut Vt+1 fut ) (Rūt + fut vt+1 ),
+by the adjoint variables νt from the current iteration which
+Kt = (R + fu′ t Vt+1 fut )−1 ( fu′ t Vt+1 fxt + λ̄t+1 fxt ut ),
+follow the equation: νt = lxt + fx′t νt+1 , i.e., the calculation is
+equivalent to the first equation in the Newton LQR solution,
+while the solution to the ILQR (7) is given by::
+except we do not have the −( fx′t Vt+1 fut + λ̄t+1 fxt ut )′ (R +
+−1 ′
+′
+′
+′
+vt = ℓxt + fxt vt+1 − fxt Vt+1 fut (R + fut Vt+1 fut ) ( fut vt+1 + Rūt ), fu′ t Vt+1 fut )−1 ( fu′ t vt+1 + Rūt ) term after the first two terms.
+′
+Vt = ℓxt ,xt + fx′t Vt+1 fxt − fx′t Vt+1 fut (R + fu′ t Vt+1 fut )−1 fu′ t Vt+1 fxt , Noting that the term (Rūt + fut vt+1 ) ≈ 0 close to an optimum,
+this clearly suggests that the approximation in [5] holds only
+kt = (R + fu′ t Vt+1 fut )−1 (Rūt + fu′ t vt+1 ),
+close to an optimum, whereas the Newton LQR equations
+Kt = (R + fu′ t Vt+1 fut )−1 ( fu′ t Vt+1 fxt ).
+hold far from the optimum.
+δ xt+1 = fxt δ xt + fut δ ut ,
+
+δ x0 = 0,
+
+Then, using the fact that iLQR is a special case of the
+modified SQP (4), it follows that iLQR always results in a
+descent direction and a suitable line search assures us that
+the next iterate is also feasible. Further, using the analogy of
+
+C. The Case of DDP
+In DDP, we start with the Bellman equation:
+
+
+∗
+Vt∗ (xt ) = min c(xt , ut ) +Vt+1
+( f (xt , ut ))
+ut
+
+(B)
+
+and it is assumed that given a nominal (x̄t , ūt ), the above
+equation can be written in the perturbation form:
+
+
+∗
+∆Vt∗ (xt ) = min ∆c(δ xt , δ ut ) + ∆Vt+1
+(δ xt+1 )
+(PB)
+δ ut
+
+where (δ xt , δ ut ) are the perturbations from (x̄t , ūt ), which
+is then expanded to second order to obtain an improved
+nominal (x̄t′ , ūt′ ) [2].
+However, (PB) does not follow from (B) unless ūt =
+u∗ (x̄t ), the optimal control action at nominal state x̄t . (B)
+may be written as:
+Vt∗ (xt ) = min Q(xt , ut )
+
+(9)
+
+ut
+
+where
+∗
+Q(xt , ut ) = c(xt , ut ) +Vt+1
+( f (xt , ut )) .
+
+(10)
+
+Let ut∗ (·) represent the optimal feedback law at time t.
+Then:
+(11)
+Vt∗ (xt ) = Q(xt , ut∗ (xt )).
+and doing a perturbation expansion around x̄t , one gets:
+Vt∗ (x̄t + δ xt ) = Q (x̄t + δ xt , ut∗ (x̄t + δ xt )) .
+
+(12)
+
+Therefore,
+Vt∗ (x̄t + δ xt ) = Q(x̄t , ūt∗ ) +
+= Qt∗ +
+
+∂Q
+∂ xt
+
+∂Q
+∂ xt
+
+δ xt +
+x̄t
+
+du∗
+· t
+ut∗ dxt
+
+∂Q
++
+∂
+ut
+x̄t
+
+∂Q
+∂ ut
+
+ut∗
+
+δ ut + H.O.T
+
+!
+δ xt + H.O.T
+
+(#)
+
+x̄t
+
+Now, consider some nominal (x̄t , ūt ) where ūt ̸= ut∗ . Then,
+an expansion of V t (xt ) leads to:
+h
+i
+V t (x̄t + δ xt ) = min Q(x̄t , ūt ) + ∆Q(δ xt , δ ut )
+δ ut
+
+However, similar to the optimal case, in general,
+ūt (xt ) = ut (x̄t ) +
+
+dut
+dxt
+
+x̄t
+
+δ xt + H.O.T.
+
+where ut (x̄t ) = ūt . Then:
+V t (x̄t + δ xt ) = Q̄t +
+
+∂Q
+∂ xt
+
+∂Q
++
+∂
+ut
+x̄t
+
+ūt
+
+dut
+dxt
+
+!
+x̄t
+
+δ xt + H.O.T.
+(##)
+
+Note that Q̄t ̸=
+∂Q
+∂ ut u∗ .
+t
+
+Qt∗ ,
+
+ut∗
+
+̸= ut ,
+
+dut∗
+dxt
+
+x̄t
+
+̸=
+
+dut
+dxt x̄ ,
+t
+
+and
+
+∂Q
+∂ ut ū
+t
+
+̸=
+
+Therefore, from (#) and (##), it follows that:
+V t (x̄t + δ xt ) ̸= Vt∗ (x̄t + δ xt ),
+
+and the perturbation equation (PB) cannot follow from the
+DP equation (B) unless ūt = ut∗ (x̄t ). A final note here is that
+the optimal feedback law ut∗ (.) has to be smooth enough for
+the perturbation expansions to hold.
+The above development can be summarized as the following
+result.
+Proposition 3: A perturbation expansion of the DP
+equation is feasible if and only if the perturbation is with
+respect to an optimal nominal path (xt∗ , ut∗ ) and given the
+
+feedback law ut∗ (.) is smooth enough.
+Thus, this implies that the DDP expression arising from
+the second order approximation of (PB) is essentially a
+heuristic approximation of the Dynamic Programming equation (B). The DDP equations can be seen to be identical to
+the Newton LQR equation except that in DDP, the multipliers
+λ̄t from the previous iteration are replaced by the current
+nominal multiplier component vt . In particular, when close
+to the optimum, vt ≈ λ̄t , and thus, DDP can be construed
+as a heuristic approximation to the Newton LQR equations,
+at least close to an optimum. Also, note that, owing to this
+interpretation, DDP and the stagewise Newton approach in
+[5], are essentially identical close to an optimum. Thus, it
+follows that the DDP solution cannot be assured to be a
+descent direction for the cost function when far from an
+optimum.
+IV. C ONTRASTING THE ALGORITHMIC PERFORMANCE OF
+DDP AND I LQR
+While the preceding discussion outlined the theoretical
+aspects of iLQR and DDP, it is equally important to understand how these algorithms behave in practice. In this
+section, we present a direct comparison of their performance
+on representative control tasks, explicitly focusing on the
+unregularized forms of both iLQR and DDP. By analyzing
+convergence rates, predicted versus actual cost reductions,
+and step sizes, we aim to reveal the practical advantages
+and shortcomings that arise solely from their respective
+local modeling choices, independent of any stabilization or
+damping heuristics.
+A. Cost-Descent Direction
+In this subsection, we examine the descent directions
+predicted by iLQR and DDP. Under mild assumptions, iLQR
+consistently produces a descent direction, whereas DDP does
+not offer the same guarantee.
+The net “expected cost reduction” in these algorithms is
+given by:
+!
+α 2 T −1 T
+∆J = − α −
+∑ kt |(R + fu′t V{zt+1 fut )−1} kt , (13)
+2 t=0
+Q−1
+uu
+
+where all variables follow the same definitions as in the
+preceding discussion, and in particular, α is the line search
+parameter. It should be noted that the term Quu should
+be positive definite for the reduction in cost. Under some
+mild assumptions, this term is always positive definite for
+iLQR. However, it may become negative-definite/indefinite
+for DDP. We consider the cartpole swing up and pendulum
+swing up task to show this comparison.
+Figure 1 illustrates that Quu remains positive in the
+cartpole and pendulum problems for iLQR. Since there is
+only a single control input, Quu is scalar in these cases.
+However, in DDP, it becomes negative at certain points,
+which can lead to an increase in cost at some time steps. This
+mixture of positive and negative values for Quu across the
+
+4000
+1
+
+3000
+
+200
+
+0.8
+
+DDP
+ILQR
+
+150
+
+,
+
+Cost
+
+0.6
+
+2000
+
+DDP
+ILQR
+
+Quu
+
+0.4
+
+50
+
+0.2
+
+1000
+
+0
+
+100
+
+0
+
+2
+
+4
+
+6
+
+8
+
+0
+
+10
+
+0
+
+2
+
+4
+
+Iter:
+
+0
+
+(a) Learning rate vs no. of iterations.
+
+DDP
+ILQR
+
+-1000
+
+0
+
+5
+
+10
+
+15
+
+20
+
+25
+
+30
+
+T ime ! Steps
+
+(a) Cart-pole swing-up.
+
+6
+
+8
+
+10
+
+Iter:
+
+(b) Cost vs no. of iterations.
+
+Fig. 2: The plot of learning rate α and cost vs iteration for the
+pendulum swing-up task starting with random initial guesses.
+DDP cools down α as the cost predictions are corrupted.
+
+20
+1
+
+9
+
+DDP
+ILQR
+
+10
+
+DDP
+ILQR
+
+7
+
+0
+
+6
+
+,
+
+Cost
+
+0.6
+
+Quu
+
+#105
+
+8
+
+0.8
+
+-10
+
+0.4
+
+5
+4
+3
+
+-20
+
+2
+
+0.2
+
+1
+0
+
+-30
+
+0
+
+100
+
+200
+
+300
+
+400
+
+500
+
+Iter:
+
+-40
+-50
+
+DDP
+ILQR
+
+0
+
+10
+
+(a) Learning rate vs no. of iterations.
+20
+
+30
+
+40
+
+50
+
+T ime ! Steps
+
+(b) Pendulum swing-up.
+
+Fig. 1: The plot of Quu for the cartpole and pendulum
+problems for the first iteration starting with random initial
+guesses.
+
+trajectory necessitates strong regularization, as the predicted
+change in cost may otherwise increase. For the pendulum
+case shown in Fig. 1b, the predicted cost variations are
+∆JDDP = −224.0154 and ∆JiLQR = −272.9982. Both methods
+predict a cost decrease, with iLQR performing better in this
+unregularized setting since Quu remains positive throughout.
+In contrast, Fig. 1a presents the Quu profile for the cartpole. Here, DDP yields ∆JDDP = 3.0172 × 107 , indicating a
+cost increase, while iLQR predicts ∆JiLQR = −5.5692 × 105 ,
+reflecting a cost reduction.
+B. Cooling of the line-search parameter α
+It is a common belief that DDP accepts larger steps than
+iLQR; equivalently, for a given decrease in cost, the linesearch parameter α is often higher under DDP than under
+iLQR, motivated by the idea that DDP forms a better local
+model by including a second-order expansion of the dynamics. In this section, we show empirical evidence that DDP
+can lead to excessive cooling of the line-search parameter,
+α, and hence, can take a much smaller step than iLQR.
+iLQR ties both prediction and realization to a single (firstorder) state-propagation model, which bounds the necessary
+backtracking. DDP, by mixing linear and second-order information introduces additional α-sensitivity that can cause
+excessive cooling of the line-search parameter.
+Figures 2 and 3 contrast the variation of cost and learning
+rate, α, for iLQR and DDP over successive iterations. As
+
+0
+
+0
+
+100
+
+200
+
+300
+
+400
+
+500
+
+Iter:
+
+(b) Cost vs no. of iterations.
+
+Fig. 3: The plot of learning rate α and cost vs iteration for the
+cart-pole problem starting with random initial guesses. DDP
+cools down α as the cost change predictions are corrupted.
+
+seen in Fig. 2, for the pendulum swing up, the learning rate
+remains fixed at 1 for iLQR, while for DDP it drops to
+smaller values after iteration 4. Even during the first four
+iterations, when α = 1 for both methods, iLQR achieves
+lower costs than DDP. In addition, DDP exhibits a noticeable
+cost increase from iteration 9 to 10, demanding a need for
+regularization. Likewise, for cartpole swing up, in Fig. 3,
+the learning rate for DDP decreases to nearly zero after a
+few iterations, resulting in a very slow cost reduction in
+subsequent steps. By contrast, iLQR maintains a learning
+rate of about 0.1 and reduces the cost more effectively.
+We applied iLQR at the point where DDP significantly
+reduces the line-search parameter. The resulting performance
+is shown in Fig. 4, where it is labeled as “Hybrid.” The plots
+clearly indicate that switching to iLQR at the stage where
+DDP cools down improves performance. Unlike DDP, iLQR
+maintains a stable learning rate and shows better convergence
+for both the cart-pole and pendulum swing-up tasks.
+C. DDP may predict an unrealistic cost decrease
+This subsection highlights that the DDP quadratic model
+can predict a decrease in cost that is not physically attainable,
+whereas the iLQR model does not. Formally,
+J + ∆JiLQR ≥ Jmin ,
+
+J + ∆JDDP < Jmin ,
+
+(14)
+
+where J is the cost using the current policy (nominal control
+input). Jmin is the minimum value by which the cost is
+bounded. In our case, we have considered a purely quadratic
+cost with no cross-coupling between states and control. So,
+our cost is bounded below by zero for each problem.
+
+200
+
+Iter.
+0
+3
+5
+
+DDP
+ILQR
+Hybrid
+
+Cost
+
+150
+
+J
+8.897408 × 105
+6.011446 × 105
+4.998068 × 105
+
+Jpred = J + ∆J
+7.0481 × 104
+5.0788 × 105
+−3.5968 × 107
+
+∆J
+−8.1926 × 105
+−9.3269e × 104
+−3.6467 × 107
+
+TABLE II: Change in cost predicted by DDP over various
+iterations starting from random initial guesses for the cartpole swing-up task.
+
+100
+
+50
+
+0
+
+0
+
+2
+
+4
+
+6
+
+8
+
+10
+
+Iter:
+
+to the optimum, leading to quicker convergence in many
+cases.
+
+(a) Pendulum swing-up.
+1182.4
+
+23.9
+DDP
+ILQR
+
+#105
+
+DDP
+ILQR
+Hybrid
+
+7
+
+1182
+
+23.8
+
+6
+
+Cost
+
+1182.2
+
+Cost
+
+8
+
+5
+
+23.75
+
+1181.8
+
+23.7
+
+1181.6
+
+23.65
+
+4
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+1181.4
+
+0
+
+Iter:
+
+2
+1
+0
+
+100
+
+200
+
+300
+
+400
+
+500
+
+5
+
+10
+
+15
+
+20
+
+Iter:
+
+(a) Pendulum swing-up.
+
+3
+
+0
+
+DDP
+ILQR
+
+23.85
+
+Cost
+
+9
+
+(b) Cart-pole swing-up
+
+Fig. 5: Cost vs. number of iterations. With an initial control
+guess near the optimum, DDP reaches the optimum in fewer
+iterations.
+
+Iter:
+
+(b) Cart-pole swing-up.
+
+Fig. 4: A comparison of iLQR, DDP and hybrid solution.
+The hybrid solution depicts iLQR applied to the point where
+DDP solution slows down as α reduces drastically (depicted
+in Figures 2 and 3).
+Iter.
+0
+2
+5
+
+J
+701.4661
+149.8840
+2.872408 × 105
+
+∆J
+−377.7732
+−51.4378
+−3.3685 × 105
+
+Jpred = J + ∆J
+323.6929
+98.4462
+−4.9609 × 104
+
+TABLE I: Change in cost predicted by DDP over various
+iterations starting from random initial guesses for the pendulum swing-up task.
+
+Table II indicates that at iteration 5, the cost predicted by
+DDP becomes negative (−3.6 × 107 ). Since the experiment
+used a purely quadratic cost with a lower bound of 0 (Jmin =
+0), such a negative prediction is not feasible. This issue does
+not occur with iLQR.
+A similar problem is shown in Table I, which shows the
+same problem for the pendulum swing-up task. DDP predicts
+a change in cost ∆J such that J + ∆J < Jmin . It should also be
+noted that the cost at iteration 5 is more than that of previous
+iterations, as we are considering unregularized DDP, and it
+tends to increase the cost because of Quu being non-positive
+definite.
+D. Faster convergence of DDP over iLQR near optima
+In certain scenarios, DDP demonstrates faster convergence
+than iLQR. In particular, near the optimal solution, a DDP
+step effectively corresponds to a Newton step. As a result,
+DDP often takes larger and more effective steps in proximity
+
+Figure 5 illustrates that when initialized sufficiently close
+to the optimum, DDP tends to converge in fewer iterations
+by taking larger steps. In Fig. 5a, for the pendulum swingup task, DDP converges within 5 iterations, whereas iLQR
+requires 8. Similarly, in Fig. 5b, for the cartpole swing-up,
+DDP converges in 5 iterations compared to 17 iterations for
+iLQR. Thus, in the neighborhood of an optimal solution,
+DDP typically achieves faster convergence than iLQR.
+V. C ONCLUSION
+We have studied the solution to optimal control problems,
+in particular, Newton’s approach, Differential Dynamic Programming (DDP), and iterative Linear Quadratic Regulation
+(iLQR), through a unified constrained SQP framework. The
+critical insight is that the Newton step in a constrained
+optimization is equivalent to a QP, and consequently, an
+LQR problem when solving an optimal control problem. The
+analysis reveals that, although DDP can be construed as an
+approximation to the Newton step close to an optimum, it
+often leads to inconsistent cost predictions and unreliable
+updates, especially when far from an optimum. In contrast,
+iLQR provides consistent descent directions and admits
+theoretical convergence guarantees, making it far more robust
+in practice. Experiments on the pendulum and cartpole tasks
+confirm that iLQR delivers stable performance, whereas DDP
+may produce dubious solutions unless heavily regularized,
+which means there are no guarantees of convergence when
+far from an optimum. These results also establish iLQR as
+a principled SQP approach to optimal control rather than
+a mere approximation of DDP by neglecting the secondorder terms, and highlight the importance of consistency
+over second-order information in optimal control problems.
+In fact, our theoretical and empirical results show that not
+
+including the second-order information is actually critical to
+the performance, thereby showing that doing less is actually
+more in this instance.
+
+[12]
+
+R EFERENCES
+[1]
+
+[2]
+
+[3]
+
+[4]
+
+[5]
+
+[6]
+
+[7]
+
+[8]
+
+[9]
+
+[10]
+
+[11]
+
+D. Q. Mayne. “A second-order gradient method for
+determining optimal trajectories of non-linear discretetime systems”. In: International Journal of Control 3.1
+(1965), pp. 85–95.
+D. H. Jacobson and D. Q. Mayne. Differential Dynamic Programming. Vol. 24. Modern Analytic and
+Computational Methods in Science and Mathematics.
+New York: American Elsevier, 1970, p. 208. ISBN:
+0444000704.
+E. Todorov and W. Li. “A generalized iterative LQG
+method for locally-optimal feedback control of nonlinear stochastic systems”. In: Proceedings of the
+American Control Conference. 2005, pp. 300–306.
+Y. Tassa, T. Erez, and E. Todorov. “Synthesis and stabilization of complex behaviors through online trajectory optimization”. In: Proceedings of the IEEE/RSJ
+International Conference on Intelligent Robots and
+Systems (2012), pp. 4906–4913.
+J. F. A. D. O. Pantoja. “Differential dynamic programming and Newton’s method”. In: International
+Journal of Control 47.5 (1988), pp. 1539–1553. DOI:
+10.1080/00207178808906114.
+L.-Z. Liao and C. A. Shoemaker. Advantages of Differential Dynamic Programming over Newton’s Method
+for Discrete-Time Optimal Control Problems. Technical Report ctc92tr97. Ithaca, NY: Cornell University,
+1992. URL: https : / / ecommons . cornell .
+edu / items / 2e4fec06 - 1f95 - 4576 - b269 7660105605c8.
+J. N. Nganga and P. M. Wensing. “Accelerating
+Second-Order Differential Dynamic Programming for
+Rigid-Body Systems”. In: IEEE Robotics and Automation Letters 6.4 (2021), pp. 7659–7666. DOI: 10 .
+1109/LRA.2021.3098928.
+Y. Tassa, N. Mansard, and E. Todorov. “Controllimited differential dynamic programming”. In: Proceedings of the IEEE International Conference on
+Robotics and Automation (2014), pp. 1168–1175.
+S. Levine and V. Koltun. “Guided policy search”. In:
+Proceedings of the 30th International Conference on
+Machine Learning (2013), pp. 1–9.
+J. Z. Zhang, T. A. Howell, Z. Yi, C. Pan, G. Shi,
+G. Qu, T. Erez, Y. Tassa, and Z. Manchester. WholeBody Model-Predictive Control of Legged Robots with
+MuJoCo. 2025. arXiv: 2503 . 04613 [cs.RO].
+URL: https://arxiv.org/abs/2503.04613.
+Z. Manchester and S. Kuindersma. “Dircol: Direct
+collocation methods for trajectory optimization”. In:
+IEEE Robotics and Automation Magazine 24.3 (2017),
+pp. 36–45.
+
+[13]
+
+[14]
+
+[15]
+
+[16]
+
+[17]
+
+[18]
+
+[19]
+
+B. Plancher, Z. Manchester, and S. Kuindersma.
+“Constrained Unscented Dynamic Programming”. In:
+2017 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). Vancouver, BC,
+Canada: IEEE, Sept. 2017, pp. 5674–5680. DOI: 10.
+1109/IROS.2017.8206457.
+G. Lantoine and R. P. Russell. “A Hybrid Differential Dynamic Programming Algorithm for Constrained
+Optimal Control Problems. Part 1: Theory”. English.
+In: Journal of Optimization Theory and Applications
+154.2 (Aug. 2012), pp. 382–417.
+G. Lantoine and R. P. Russell. “A Hybrid Differential Dynamic Programming Algorithm for Constrained
+Optimal Control Problems. Part 2: Application”. English. In: Journal of Optimization Theory and Applications 154.2 (Aug. 2012), pp. 418–442.
+J. D. Aziz, D. J. Scheeres, and G. Lantoine. “Hybrid
+Differential Dynamic Programming in the Circular
+Restricted Three-Body Problem”. In: Journal of Guidance, Control, and Dynamics 42.5 (2019), pp. 963–
+975. DOI: 10.2514/1.G003617. URL: https:
+//doi.org/10.2514/1.G003617.
+A. Oshin, M. D. Houghton, M. J. Acheson, I. M.
+Gregory, and E. A. Theodorou. “Parameterized Differential Dynamic Programming”. In: Robotics: Science and Systems XVIII (RSS). New York City,
+NY, USA, June 2022. URL: https : / / www .
+roboticsproceedings . org / rss18 / p046 .
+pdf.
+C. D. Noyes. Robust Optimal Entry Guidance for Future Mars Landers. Technical Report. Open-access UC
+eScholarship report. University of California, Irvine,
+2021. URL: https://escholarship.org/uc/
+item/7bv3q5ws.
+P. T. Boggs and J. W. Tolle. “Sequential quadratic
+programming methods for large-scale nonlinear optimization”. In: Mathematical Programming 62.1-3
+(1995), pp. 3–30.
+R. Wang, A. Sharma, K. S. Parunandi, R. Goyal,
+M. N. G. Mohamed, and S. Chakravorty. “The Search
+for Feedback in Reinforcement Learning”. In: Journal
+of Dynamic Systems, Measurement, and Control 147.6
+(2025), p. 061002. DOI: 10.1115/1.4068705.
+
+

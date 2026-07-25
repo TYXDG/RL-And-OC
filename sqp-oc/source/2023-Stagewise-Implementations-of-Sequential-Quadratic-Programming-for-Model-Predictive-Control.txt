@@ -1,0 +1,2132 @@
+Stagewise Implementations of Sequential Quadratic Programming
+for Model-Predictive Control
+Armand Jordana∗,1 , Sébastien Kleff∗,1 , Avadesh Meduri∗,1 ,
+Justin Carpentier2 , Nicolas Mansard3 and Ludovic Righetti1
+Abstract— The promise of model-predictive control in
+robotics has led to extensive development of efficient numerical
+optimal control solvers in line with differential dynamic programming because it exploits the sparsity induced by time.
+In this work, we argue that this effervescence has hidden
+the fact that sparsity can be equally exploited by standard
+nonlinear optimization. In particular, we show how a tailored
+implementation of sequential quadratic programming achieves
+state-of-the-art model-predictive control. Then, we clarify the
+connections between popular algorithms from the robotics community and well-established optimization techniques. Further,
+the sequential quadratic program formulation naturally encompasses the constrained case, a notoriously difficult problem
+in the robotics community. Specifically, we show that it only
+requires a sparsity-exploiting implementation of a state-of-theart quadratic programming solver. We illustrate the validity of
+this approach in a comparative study and experiments on a
+torque-controlled manipulator. To the best of our knowledge,
+this is the first demonstration of nonlinear model-predictive
+control with arbitrary constraints on real hardware.
+
+I. INTRODUCTION
+A. Motivation
+Model Predictive Control (MPC) has become popular
+for online robot decision-making. It has shown compelling
+results with all kinds of robots ranging from industrial
+manipulators [1], quadrupeds [2]–[4] to humanoids [5], [6].
+The general idea of MPC is to formulate the robot motion
+generation problem as a numerical optimization problem,
+i.e., a finite horizon Optimal Control Problem (OCP), and
+solve it online at every control cycle using the current
+state measurement as the initial state. This receding horizon
+strategy allows us to adapt the robot behavior as the state of
+the system and environment change.
+In robotics, Differential Dynamic Programming (DDP) [7]
+is a popular choice to solve OCPs because it exploits the
+problem’s structure well. This advantage has led to a bustling
+algorithmic development over the past two decades [8]–[20].
+In light of the increasing number of variations of DDP, one
+might naively ask: why not use well-established optimization
+algorithms [21]? Is there anything special in MPC that cannot
+This work was in part supported by the National Science Foundation
+grants 1932187, 2026479, 2222815 and 2315396.
+∗ Equal contribution - first authors listed in alphabetical order.
+1
+Machines in Motion Laboratory, New York University,
+USA
+aj2988@nyu.edu, sk8001@nyu.edu,
+
+am9789@nyu.edu, lr114@nyu.edu
+2 Inria - Département d’Informatique de l’École normale supérieure, PSL
+Research University. justin.carpentier@inria.fr
+3
+LAAS-CNRS, Université de Toulouse, CNRS, Toulouse.
+
+nmansard@laas.fr
+
+be tackled by, for example, an efficient implementation of
+Sequential Quadratic Programming (SQP) [22]? In this work,
+we show that special implementations of numerical methods developed by the optimization-based control community
+[23]–[26] are, in fact, sufficient to achieve state-of-the-art
+MPC on real robots.
+B. Related work
+Mayne first introduced DDP [7] as an efficient algorithm
+to solve nonlinear OCPs by iteratively applying a backward pass over the time horizon and a nonlinear forward
+rollout of the dynamics. This algorithm notably exhibits
+linear complexity in the time horizon and local quadratic
+convergence [27]. More recently, Todorov revived the interest
+in DDP by proposing the iterative Linear Quadratic Regulator
+(iLQR) [8], a variant discarding the second-order terms of
+the dynamics. It has since gained a lot of traction within
+the robotics community [3]–[5], [14], [18], and its similarity
+to Gauss-Newton optimization has been established [9],
+[28]. However, this approach faces two main limitations:
+1) as a single shooting method, it requires a dynamically
+feasible initial guess, which makes the algorithm difficult
+to warm-start, an essential requirement to reduce computation times [12] and 2) enforcing equality and inequality
+constraints is not straightforward. The common practice is
+to enforce constraints softly using penalty terms in the cost
+function. But this approach is heuristic (i.e., it requires cost
+weight tuning) and tends to cause numerical issues [29].
+Multiple shooting for optimal control, introduced in [30],
+addresses the first limitation: it accepts an infeasible initial
+guess. Several multiple shooting variants of DDP/iLQR were
+proposed in [12], [14] with significantly improved convergence abilities, which have enabled nonlinear MPC at high
+frequency on real robots [1], [3], [6], [14].
+The second issue of enforcing constraints inside a DDPlike algorithm has been addressed in several works. [10] uses
+a DDP-based projected Newton method to bound control
+inputs. This approach has further been improved and deployed on a real quadruped robot in [17]. More recently,
+augmented Lagrangian methods have been used to enforce
+constraints in iLQR/DDP algorithms [11], [13], [16], [19].
+However, their convergence behavior is less understood than
+DDP, whose seminal paper [7] was followed by sophisticated
+proofs [27]. To the best of our knowledge, it has not yet
+been shown that those recent DDP-based algorithms exhibit
+global convergence (i.e., convergence from any initial point
+to a stationary point) and quadratic local convergence.
+
+Besides, an open topic of debate is whether to use a nonlinear or a linear rollout to enforce dynamics constraints in
+the forward pass. Previous work on single shooting methods
+has argued that a nonlinear rollout can reduce the number
+of iterations [31], while [28], [32] showed mixed results
+both experimentally and theoretically. Recently, a nonlinear
+rollout was implemented by a popular multiple-shooting
+variant of iLQR [14]. However, we are unaware of any
+comparisons between linear and nonlinear rollouts in the
+context of multiple shooting methods.
+In the face of these challenges, we propose to take a
+fresh look at the earlier literature. Indeed, Dunn et al.
+showed that Newton’s method could also be implemented
+in a DDP-like fashion and equally benefit from linear
+complexity in the time horizon and quadratic convergence
+[33]. This finding indicates that optimal control does not
+fundamentally require new nonlinear optimization tools but
+only tailored implementations that exploit the time-induced
+sparsity structure. This naturally led to numerous extensions
+to the constrained case. For example, Wright proposed to
+use an SQP formulation with an active set to address arbitrary nonlinear constraints [22]. However, because of the
+limitations of active set methods, Wright focused on the
+single shooting case resolution. Then, Pantoja et al. proposed
+an efficient implementation of SQP for control inequality
+constraints [34]. Di Pillo et al. proposed a tailored implementation of a Quasi-Newton method with an augmented
+Lagrangian-based approach [35]. Dohrmann et al. studied
+equality-SQP for optimal control [36]. Additionally, [37]–
+[41] studied the tailored implementation of Interior Point
+Methods for optimal control.
+In the late 2000’s, with the promise of high-frequency
+linear MPC, a large body of work studied how to tailor
+Quadratic Programming (QP) for the Constrained Linear
+Quadratic Regulator (CLQR) problem. This was done with
+active set methods [42], [43], ADMM-based solvers [23] and
+interior point method [25], [44]. We refer the reader to [24]
+for an extensive survey.
+To solve the nonlinear case, [26] recently proposed efficient software with an SQP implementation for OCP.
+[45] studied how to exploit the sparsity induced by time
+in IPOPT [46]. Unfortunately, this line of work has not
+benefited from as much experimental study as DDP-like
+algorithms. Recently, [47] showed impressive experimental
+results on quadrupeds using a tailored SQP implementation
+based on HPIPM [25], which lies in the continuity of
+previous works using [25], [26] on real hardware [48]–[50].
+However, to the best of our knowledge, we are not aware of
+closed-loop constrained nonlinear MPC on torque-controlled
+robots.
+Recently, [51] reviewed the models and optimization
+algorithms used in robotics in the context of MPC. As
+emphasized in this survey, we argue that there is a gap
+between the optimization-based control and the robotics
+community. On the one hand, an important part of the
+robotics community followed the successes of [52] and
+continued to propose DDP-like algorithms. On the other
+
+hand, the optimization-based control community followed
+the work of [22], [34] and proposed efficient implementations
+of established optimization algorithms [24], [26], [45]. In this
+work, we aim to bridge this gap.
+C. Contributions
+In this paper, we follow the line of thought of the
+optimization-based control community in order to push the
+limits of closed-loop nonlinear MPC in robotics. First, we
+shed light on the direct connection between modern multipleshooting DDP-like algorithms and textbook SQP algorithms.
+Second, we show through an experimental study that a
+standard stagewise SQP formulation is, in fact, superior to
+the state-of-the-art FDDP [14]. Third, we re-implement a
+QP solver tailored for optimal control by leveraging Riccati
+recursions in order to maintain linear complexity in the time
+horizon while also enforcing constraints [23], [53]. Using this
+custom QP implementation inside the SQP formulation, we
+can solve arbitrary nonlinear constrained OCPs efficiently
+while inheriting the well-known convergence properties of
+standard SQPs. Lastly, we demonstrate the ability of this
+SQP formulation to enforce arbitrary nonlinear constraints
+in MPC experiments on a torque-controlled manipulator. To
+the best of our knowledge, this is the first demonstration
+of closed-loop nonlinear MPC with hard constraints on real
+hardware. The optimization software has been open-sourced
+and integrated with Crocoddyl [14] to ensure reproducible
+experiments and enable easy use by the research community.
+II. S EQUENTIAL Q UADRATIC P ROGRAMMING FOR
+O PTIMAL C ONTROL P ROBLEMS
+Notations. The derivative of a function f with respect to
+a vector v is denoted by ∇v f , similarly for second order
+derivatives with respect to vectors u, v is denoted as ∇2uv f .
+Bold characters are used to denote a sequence of vectors
+indexed over a time horizon, e.g., v = {v1 , · · · , vk , · · · }.
+In this work, we study constrained optimal control problems of the form:
+min
+x,u
+
+T
+−1
+X
+
+ℓk (xk , uk ) + ℓT (xT )
+
+(1a)
+
+k=0
+
+subject to xk+1 = fk (xk , uk ),
+ck (xk , uk ) ≥ 0,
+cT (xT ) ≥ 0,
+
+(1b)
+0 ≤ k < T,
+
+(1c)
+(1d)
+
+where x
+=
+(x1 , ..., xT ) is the state sequence,
+u = (u0 , u1 , ..., uT −1 ) the control inputs and x0 is the
+initial state provided by the user (e.g., estimated state).
+The transition functions, fk , the cost functions, ℓk and
+the constraint functions, ck , are supposed to be C 2 . To
+keep notations simple, we formulated the OCP with
+inequality, which also encompasses equality constraints.
+Yet, equality constraints can be treated separately from
+general inequalities in practice.
+
+Considering the state sequence as an optimization variable
+allows the optimization procedure to iterate through infeasible trajectories, yielding a multiple-shooting approach [30].
+Remark 1. One may choose to optimize only on the sequence of control inputs and define the dynamics constraints
+implicitly, yielding a single shooting approach. In that case,
+if no inequality constraints are considered, the problem is
+unconstrained and can be solved via an efficient implementation of Newton’s method [33] or with a modified Newton’s
+method with a nonlinear rollout, namely DDP [7].
+In this work, we focus on multiple-shooting approaches.
+The associated Lagrangian is:
+L(x, u, λ, µ) = ℓT (xT ) − µTT cT (xT ) +
+T
+−1
+X
+
+(2)
+
+ℓk (xk , uk ) − λTk+1 (xk+1 − fk (xk , uk )) − µTk ck (xk , uk ),
+
+Qk , Sk , Rk are the Hessian of the Lagrangian with respect
+to the state and control inputs, Dk , Ek , DT are the constraint
+[n]
+[n]
+[n]
+Jacobian and γk+1 = fk (xk , uk ) − xk+1 is the constraint
+violation which is often referred to as dynamic gaps [14]
+or defects [12]. Note that this formulation of SQP and its
+associated QP is precisely the same as the one proposed in
+the seminal multiple-shooting article [30].
+Remark 3. In his seminal work introducing multiple shooting [30], Bock exploits the sparsity of the quadratic problem
+of Eq. (3) induced by the multiple shooting structure yielding
+to a cubic complexity in the time horizon, T . Instead, this
+work exploits the sparsity induced by time in order to achieve
+a linear complexity.
+The solution of the QP (∆x, ∆u) is then used to update
+the guess:
+x[n+1] = x[n] + α∆x
+
+k=0
+T
+
+T
+
+where λ = (λ1 , ..., λT ) and µ = (µ0 , ..., µT ) are
+Lagrange multipliers.
+Intuitively, SQPs iteratively solve QPs to find a tuple
+(x, u, λ, µ) that satisfies the KKT conditions [54]. Note that
+we consider the constraint x0 = x̄0 to be implicit. Therefore,
+no Lagrange multiplier is associated with that constraint.
+For simplicity, we slightly abuse the notation by referring
+to l0 (x0 , u0 ) instead of l0 (u0 ) even if x0 is fixed.
+Remark 2. Note that one might also want to consider a
+generic constraint on the initial condition c(x0 ) (e.g., in the
+context of robust control [55]). To do so, the initial condition
+must be considered an optimization variable. Although we
+do not consider this setting to clarify derivations, our work
+naturally extends to this case.
+More precisely, at the nth iteration, given a guess on the
+tuple (x[n] , u[n] , λ[n] , µ[n] ), we aim to find a correction on
+the guess by solving the following QP problem (Algorithm
+18.1, [21]):
+
+T 
+
+  T 
+
+T
+−1
+X
+1 ∆xk
+Qk Sk ∆xk
+qk
+∆xk
++
+min
+rk
+∆uk
+SkT Rk ∆uk
+∆x,∆u
+2 ∆uk
+
+u
+
+[n+1]
+
+=u
+
+[n]
+
++ α∆u
+
+(6a)
+(6b)
+
+Here, α is the step size and is chosen using a line search
+method. λ[n+1] and µ[n+1] are then replaced by the associated Lagrange multiplier of the QP (3) [54]. Provided
+assumptions on the Problem (1), SQPs can guarantee local
+quadratic convergence or super-linear convergence in the
+case of quasi-Newton approximation [54].
+III. S OLVING THE U NCONSTRAINED QP
+In this section, we review the case when the OCP has
+no constraints to recall the equivalence between the backward Riccati recursions used in DDP and a special type of
+Gaussian elimination for tridiagonal matrices, specialized to
+the sparsity pattern of the KKT system arising in OCPs.
+This result, insufficiently known in the robotics community,
+will then be exploited to propose a novel extension to the
+constrained case.
+Proposition 1. Without inequality constraints, the KKT conditions of Problem (3) can be written as a block tri-diagonal
+symmetric matrix equation.
+
+k=0
+
+1
++ ∆xTT QT ∆xT + ∆xTT qT
+2
+s.t. ∆xk+1 = Ak ∆xk + Bk ∆uk + γk+1 ,
+Dk ∆xk + Ek ∆uk + ck ≥ 0,
+
+(3a)
+(3b)
+
+0 ≤ k < T.
+
+DT ∆xT + cT ≥ 0.
+
+(3c)
+(3d)
+
+[n]
+
+where qT = ∇x ℓT (xT ) and
+QT = ∇2xx ℓT
+Qk =
+Sk =
+Rk =
+
+∇2xx ℓk
+∇2xu ℓk
+∇2uu ℓk
+[n]
+
+[n]
+− µTT ∇2xx cT (xT )
+(4)
+ [n] [n]
+T
+2
+T 2
++ λk+1 ∇xx fk − µk ∇xx ck (xk , uk )
+ [n] [n]
++ λTk+1 ∇2xu fk − µTk ∇2xu ck (xk , uk )
+ [n] [n]
++ λTk+1 ∇2uu fk − µTk ∇2uu ck (xk , uk )
+
+
+
+[n]
+
+[n]
+
+[n]
+
+(5)
+
+[n]
+[n]
+∇u ℓk (xk , uk )
+
+0 ≤ k < T.
+
+Ak = ∇x fk (xk , uk ), Bk = ∇u fk (xk , uk )
+qk =
+
+[n]
+[n]
+∇x ℓk (xk , uk ),
+
+rk =
+
+M1T
+Γ2
+M2
+0
+..
+.
+0
+
+
+
+Γ1
+M1
+
+ 0
+
+ 0
+ .
+ .
+ .
+0
+
+0
+M2T
+Γ3
+M3
+..
+.
+0
+
+0
+0
+M3T
+Γ4
+..
+.
+0
+
+···
+···
+···
+..
+.
+..
+.
+..
+.
+
+   
+0
+s1
+g1
+ s2   g2 
+0
+   
+   
+0
+  s3   g3 
+= 
+
+s4 
+0 
+  g4 
+..  
+ ..   .. 
+.  .   . 
+sT
+gT
+ΓT
+
+(7)
+
+where:
+
+
+
+T
+−Bk−1
+I ,
+0
+
+
+∆uk−1
+and sk =  ∆xk ,
+−λk
+
+Rk−1
+Γk =  0
+−Bk−1
+
+0
+Qk
+I
+
+
+0 SkT
+
+0
+Mk = 0
+0 −Ak
+
+
+−rk−1
+gk =  −qk  .
+γk
+
+
+0
+0
+0
+(8)
+
+The proof is only computational and is detailed in the
+supplementary material1 . Note that we slightly abuse the notation by using the λ as the Lagrange multiplier for both the
+QP and the nonlinear problem. The most straightforward way
+to solve such a system is to apply Gaussian elimination by
+using the well-known Thomas algorithm [56] (Algorithm 1)
+to achieve a complexity in O(T ).
+
+This result shows that the backward Riccati equations
+used for Linear Quadratic Regulators (LQR) are an efficient
+technique for solving Quadratic Programs with a tri-diagonal
+symmetric KKT matrix. Consequently, these equations are
+ideal for solving OCPs with linear dynamics and quadratic
+costs.
+
+Algorithm 1: Thomas algorithm
+1
+2
+
+Γ̄T ← ΓT
+ḡT ← Γ−1
+T gT
+/* backward pass
+
+3
+4
+5
+
+*/
+
+for k ← 1 to T − 1 do
+Γ̄k ← Γk − MkT Γ̄−1
+k+1 Mk
+−1
+ḡk ← Γ̄k (gk − MkT ḡk+1 )
+/* forward pass
+
+6
+7
+8
+
+*/
+
+s1 ← ḡ1
+for k ← 1 to T − 1 do
+sk+1 ← ḡk+1 − Γ̄−1
+k+1 Mk sk
+
+In particular, we use the knowledge of the structure (sparsity pattern) in both Γk and Mk to recover simpler recursions.
+This leads to another way of obtaining the backward Riccati
+equations of LQR, which is accepted knowledge in the
+optimization-based control community [22], [24], [33], [57]
+but is largely ignored in robotics.
+Proposition 2. By applying the Thomas algorithm, we recover the well-known Riccati recursions. Specifically, the
+backward pass can be done by initializing VT = QT and
+vT = qT , and then by applying the following equations:
+hk = rk + BkT (vk+1 + Vk+1 γk+1 )
+Gk = SkT + BnT Vk+1 Ak
+
+Kk = −Hk−1 Gk
+
+Hk = Rk + BkT Vk+1 Bk
+
+kk = −Hk−1 hk
+
+(9)
+
+Vk = Qk + ATk Vk+1 Ak − KkT Hk Kk
+vk = qk + KkT rk + (Ak + Kk Bk )T (vk+1 + Vk+1 γk+1 )
+Then, the forward pass initializes ∆x0 = 0 and unrolls the
+linearized dynamics:
+∆xk+1 = (Ak + Bk Kk )∆xk + Bk kk + γk+1
+
+(10a)
+
+∆uk = Kk ∆xk + kk
+
+(10b)
+
+λk = Vk ∆xk + vk
+
+(10c)
+
+Proof. The proof is mainly computational and relies on the
+analytical inversion of Γ̄k in order to prove by recursion that:
+
+T
+Rk−1
+0 −Bk−1
+Vk
+I 
+Γ̄k =  0
+−Bk−1 I
+0
+
+
+−rk−1
+ −vk 
+ḡk = Γ̄−1
+k
+γk
+
+
+1 https://github.com/machines-in-motion/StagewiseSQP
+
+In other words, the recursion on Γ̄k and ḡk can be substituted by the recursion on the value function hessian and
+gradient. The forward recursion can then be recovered using
+sk+1 = ḡk+1 − Γ̄−1
+k+1 Mk sk and the analytical inversion of
+Γ̄k . Detailed derivations are provided in the supplementary
+material.
+
+(11a)
+
+Remark 4. A vast amount of literature exists on tri-diagonal
+matrices. Understanding the structure of the KKT matrices
+inherent to OCP enables the use of any of these techniques
+directly. There are methods to factor those matrices or to
+solve them more efficiently, such tri-diagonal system. For
+instance, parallel cyclic reduction can be used in order to
+achieve a O(log(T )) complexity, which might be interesting
+for problems with long time horizons [58]–[61].
+IV. S OLVING THE C ONSTRAINED QP
+We are now in the position to extend the discussion
+of the previous section to the case with inequality constraints. When inequalities are added, the underlying KKT
+system associated with the QP defined in (3) will have the
+same tri-diagonal structure. Therefore, similar recursions can
+be used to solve it efficiently. For instance, HPIPM [25]
+derives efficiently an interior point method. Although we
+could have used this method, we chose OSQP [53] as it
+outperforms HPIPM on the set of benchmarks developed
+by [62]. Furthermore, ADMM-based methods are known to
+find a reasonably good solution in a few iterations [63],
+[64], an appealing feature for MPC applications. Finally,
+as originally discussed by [23], ADMM-based methods can
+easily be implemented sequentially. We illustrate this by
+deriving a tailored implementation of the modern ADMMbased solver OSQP [53] for OCP. However, we would like
+to highlight that the reader could choose any other desired
+sparsity exploiting QP solver depending on their preference.
+A. Background on ADMM
+Here, we follow [53], [63] to briefly summarize ADMM.
+Using generic notations, Problem (3) aims to solve a problem
+of the form:
+min
+v∈Dom(g)
+
+(11b)
+
+g(v) s.t. Cv ∈ C
+
+(12)
+
+Note that we use generic notations of the QP literature in
+this section. Hence, v denotes the optimization variable.
+Furthermore, C is a matrix, g is a convex function, and C is
+
+of quadratic cost. Consequently, Eq. (13a) can be solved
+with a backward and forward pass similar to those of the
+unconstrained case, ensuring a linear complexity in the time
+horizon. Furthermore, due to the stagewise nature of the
+inequality constraint, Eq. (13b) - (13e) can be implemented
+recursively or in parallel. Algorithm 2 summarizes the
+procedure.
+
+a convex set. The ADMM updates are then:
+ρ
+ṽ j+1 = argmin g(v) + ∥Cv − z j + ρ−1 y j ∥22
+2
+v∈Dom(g)
+σ
++ ∥v − v j ∥22
+(13a)
+2
+z̃ j+1 = αC ṽ j+1 + (1 − α)z j
+(13b)
+v j+1 = αṽ j+1 + (1 − α)v j
+
+z j+1 = ΠC z̃ j+1 + ρ−1 y j
+y j+1 = y j + ρ z̃ j+1 − z j+1
+
+(13c)
+(13d)
+
+
+Algorithm 2: ADMM tailored for OCP
+
+(13e)
+
+Input: ∆xj , ∆uj , z j , y j
+/* Minimization problem
+
+where ΠC is the projection operator on the convex set C, ρ
+is the penalty parameter that encourages consensus between
+v and z, and α ∈ (0, 2) is an over-relaxation parameter that
+improves convergence speed (e.g., when set between 1.5 and
+1.8 [63]).
+
+for k ← 1 to T − 1 do
+j
+z̃kj = α(Dk ∆xj+1
++ Ek ∆uj+1
+k
+k ) + (1 − α)zk
+j+1
+f k + (1 − α)∆xj
+∆xj+1 = α∆x
+
+/* Lagrange multiplier update
+3
+
+Here, we present the ADMM-based QP solver [63], which
+is tailored for optimal control problems. The presented
+algorithm is mainly inspired by [23]. We further introduce
+more recent techniques developed in ADMM [63] to the
+previous work [23] to improve solver performance. Finally,
+we provide an efficient implementation of the proposed
+solver, enabling reliable real-robot deployment.
+In order to exploit the time-induced sparsity and leverage
+the Riccati recursions specific to the OCP formulation, we
+design a QP solver that always maintains the feasibility of
+the dynamics. More precisely, we consider the optimization
+variable to be
+
+5
+6
+7
+8
+9
+10
+11
+
+(14)
+
+and g to be the cumulative cost function defined in Eq. (3a),
+We propose to define Dom(g) to encode the set of feasible
+dynamics (3b) while Cv ∈ C encodes the path and terminal
+constraint (3c) (3d). Eq. (13a) can therefore be written as:
+
+∆x,∆u
+
+T
+−1 
+X
+k=0
+
+∆xk
+∆uk
+
+T 
+
+Qk
+SkT
+
+Sk
+Rk
+
++ ∆xTT QT ∆xT + ∆xTT qT +
++
+
++
+
+T
+−1
+X
+k=0
+T
+X
+k=0
+
+s.t.
+
+  T 
+
+∆xk
+q
+∆xk
++ k
+∆uk
+rk
+∆uk
+
+
+
+ρ
+DT ∆xT − zTj + ρ−1 yTj
+2
+
+ρ
+Dk ∆xk + Ek ∆uk − zkj + ρ−1 ykj
+2
+σ
+∆xk − ∆xjk
+2
+
+2
+
++
+2
+
+T
+−1
+X
+k=0
+
+2
+2
+
+σ
+∆uk − ∆ujk
+2
+
+2
+2
+
+∆xk+1 = Ak ∆xk + Bk ∆uk + γk+1 .
+j
+
+(y0j , y1j , ..., yTj )T
+
+(15a)
+(15b)
+
+and
+We
+denote
+y
+=
+z j = (z0j , z1j , ..., zTj )T . Therefore, Eq. (13a) has the
+exact same structure as the unconstrained case mentioned in
+Section III. Note that the stagewise nature of the inequality
+constraints allows us to write the ρ dependent regularization
+terms in a block-sparse way as well. More precisely, as each
+inequality only depends on one time-step, the ρ dependent
+regularization term can be written as a stagewise sum
+
+*/
+
+2
+
+4
+
+min
+
+g
+, ∆u
+
+j+1
+
+1
+
+B. Tailored ADMM for optimal control
+
+v ≜ (∆x, ∆u)T
+
+j+1
+
+g
+Solve (15) using LQR to get ∆x
+
+2
+2
+
+k
+
+*/
+
+k
+
+j+1
+
+f k + (1 − α)∆uj
+∆uj+1
+= α∆u
+k
+k
+j
+zk = max(ck , z̃kj + ρ−1 ykj )
+ykj+1 = ykj + ρ(z̃kj − zkj+1 )
+z̃Tj = αDT ∆xj+1
++ (1 − α)zTj
+T
+j+1
+f T + (1 − α)∆xj
+∆xj+1 = α∆x
+T
+
+T
+
+zTj = max(cT , z̃Tj + ρ−1 yTj )
+yTj+1 = yTj + ρ(z̃Tj − zTj+1 )
+Output: ∆xj+1 , ∆uj+1 , z j+1 , y j+1
+
+C. Details on the QP
+In our implementation, we take σ = 10−6 , α = 1.6
+and consider the same schedule as OSQP for the ρ-update
+[53]. Subsequently, the new backward recursion is only
+needed when ρ is updated (once in 25 ADMM iterations).
+This makes the algorithm highly efficient when compared
+to a standard QP solver and the solver proposed in [23]
+because the forward passes are very cheap (only matrixvector multiplications), and the inversion in the backward
+pass happens very few times. Furthermore, the QP is warmstarted by the solution of the problem with only equality
+constraint (dynamic-feasibility). This comes at the cost of
+Riccati recursions but dramatically reduces the total number
+of ADMM iterations required. Lastly, we compute a relative
+primal and dual tolerance after each ADMM iteration as
+discussed in [63]. We use these quantities as termination
+criteria.
+V. P RACTICAL IMPLEMENTATION OF THE SQP
+A. Gauss-Newton approximation
+A common practice is to ignore the second-order term of
+the constraints as it is expensive to compute [8], [12], [14].
+Subsequently, the second-order cost terms become:
+[n]
+
+QT = ∇2xx ℓT (xT ),
+[n]
+
+[n]
+
+[n]
+
+[n]
+
+[n]
+
+Qk = ∇2xx ℓk (xk , uk )
+[n]
+
+Sk = ∇2xu ℓk (xk , uk ),
+
+Rk = ∇2uu ℓk (xk , uk ), (16)
+
+for 0 ≤ k < T . A direct consequence is that (3) is now
+independent of the multipliers. In this unconstrained case,
+
+the resulting SQP can be efficiently solved by sequentially
+constructing a QP at each iterate and solving it with LQR.
+This method was initially proposed as the Gauss-Newton
+Multiple Shooting (GNMS) method in [12]. However, the
+connection to SQPs was not discussed in the paper. Thus,
+GNMS is an efficient SQP algorithm to solve equalityconstrained nonlinear optimization problems with block separable constraints and costs when the second-order terms are
+ignored.
+
+In contrast, the merit function is of the form:
+ℓ(x[j] , u[j] ) + µγ γ(x[j] , u[j] ) + µc c(x[j] , u[j] ),
+
+where µγ and µc are weights defined by the user. A step
+is accepted if the candidate allows a decrease in the merit
+function. The downside of the merit function is that the
+weight between each term has to be tuned, which can be
+cumbersome. On the other hand, we found that the filter line
+search yielded good performances and was more practical as
+no parameter tuning was required. In this filter line search,
+the cost values, gap norm, and constraint violation of all the
+previous iterates are stored and browsed. In our implementation, we provide the possibility of keeping only a restricted
+number of iterates in memory and refer to this parameter as
+the filter size. Although a filter keeping all the past estimates
+can help with problems that require many iterations (e.g.,
+to meet a strict tolerance), it can reasonably be shortened
+or even discarded in practice for MPC applications. In our
+experience, one can select a filter size of 1 without significant
+loss in convergence.
+
+Remark 5. Note that more sophisticated schemes estimating
+the exact Hessians iteratively could be used as done in
+[30]. Furthermore, in the unconstrained case, the recent
+work of [20] suggests that the convergence benefits might
+compensate for the computational requirement of the secondorder computations.
+B. Linear rollout
+By nature of the SQP algorithm, the update step (6) is
+equivalent to making a linear rollout of the dynamics (cf.
+(10a)). However, a nonlinear rollout is often favored in DDPlike algorithms, e.g., in the popular Feasible-DDP algorithm
+[14] or in ALTRO [13]. While [7], [27] studied well the local
+and global convergence property of DDP, to the best of our
+knowledge there is no guarantee that these nonlinear rollout
+formulations maintain global convergence in the multiple
+shooting context. Hence, a theoretical analysis of algorithms
+such as Feasible-DDP remains to be done. In contrast,
+SQPs benefit from a very exhaustive theoretical analysis,
+convergence guarantees, and experimental validation in a
+variety of fields [21]. Furthermore, allowing the gaps to close
+in one step, as in [14], seems to go against the spirit of the
+original formulation of multiple shooting with SQP [30].
+
+D. Termination criteria
+The solver is terminated once the infinity norm of the KKT
+condition is below a certain threshold. More precisely, the
+following termination criterion is used:
+∇x L(x[n] , u[n] , λ[n] , µ[n] )
+∇u L(x[n] , u[n] , λ[n] , µ[n] )
+[n]
+
+[n]
+
+∞
+∞
+
+[n]
+
+xk+1 − fk (xk , uk )
+h
+i
+[n]
+[n]
+ck (xk , uk )
+
+∞
+
+− ∞
+
+C. Line search
+
+h
+
+Now that we essentially use SQPs with a QP that exploits
+the block sparsity, we can leverage the vast literature of
+line search algorithms to select the right step length (Eq.
+(6)). We compared both a filter line-search [65] and a merit
+function-based line-search [21]. Let’s define the total cost of
+a trajectory, the total gap violation, and the total constraint
+violation as:
+[j]
+
+[j]
+
+ℓ(x , u ) =
+γ(x[j] , u[j] ) =
+c(x[j] , u[j] ) =
+
+T
+−1
+X
+k=0
+T
+−1
+X
+k=0
+T
+−1
+X
+
+[j]
+
+[j]
+
+[j]
+
+ℓk (xk , uk ) + ℓT (xT ),
+[j]
+
+[j]
+
+h
+i
+[j]
+[j]
+ck (xk , uk )
+
+k=0
+
+− ∞
+
+,
+
+∞
+
+h
+
++
+
+i
+[j]
+cT (xT )
+
+− ∞
+
+[n+1]
+
+With the filter line search, a candidate x
+accepted if:
+
+,u
+
+[n+1]
+
+is
+
+i
+[n]
+cT (xT )
+
+− ∞
+
+≤ ϵSQP
+
+(20)
+
+≤ ϵSQP
+≤ ϵSQP ,
+
+0 ≤ k < T,
+
+≤ ϵSQP ,
+
+0 ≤ k < T.
+
+≤ ϵSQP .
+
+We use here the convergence criteria widely used in the
+optimization community [21]. Note that we do not employ a
+real-time iteration scheme [66] as we found in practice that
+letting the solver converge led to better experimental results
+than re-planning faster with a single SQP iteration.
+As mentioned in [21], λ[n+1] , µ[n+1] are given by the
+Lagrange multiplier associated with (3). Note that we can
+compute them very efficiently due to the recursions. In the
+unconstrained case, we can use (10c). In the constrained case,
+we have,
+
+(17)
+
+[j]
+
+xk+1 − fk (xk , uk )
+
+(19)
+
+.
+
+gk + vk
+λk = Vk ∆x
+
+(21)
+
+µk = yk
+
+(22)
+
+where Vk , vk are derived from the Riccati recursions defined
+gk , yk are the primal and dual
+by Problem (15) and where ∆x
+solutions of the QP (at time k).
+
+(18a)
+
+VI. E XPERIMENTS
+
+or ∀j ≤ n,
+
+γ(x
+
+[j]
+
+) < γ(x , u )
+
+(18b)
+
+or ∀j ≤ n,
+
+c(x[n+1] , u[n+1] ) < c(x[j] , u[j] )
+
+(18c)
+
+In this section, we demonstrate the practical benefits of
+using a sparsity-exploiting SQP implementation for nonlinear
+MPC with and without inequality constraints. The solvers
+
+∀j ≤ n,
+
+ℓ(x[n+1] , u[n+1] ) < ℓ(x[j] , u[j] )
+[n+1]
+
+,u
+
+[n+1]
+
+[j]
+
+used in the benchmarks and experiments are open-sourced in
+the mim solvers library2 , which uses Crocoddyl [14]
+as a base software. Rigid-body dynamics computations are
+done using the Pinocchio library [67] and its analytical
+derivatives [68]. All the benchmarks and figures presented in
+this paper can be reproduced using the dedicated repository
+StagewiseSQP3 .
+Firstly, we benchmark the performance of our tailored
+SQP in the absence of constraints (Section III) against
+other popular methods that use non-linear rollouts. We show
+that our tailored SQP implementation performs as well and
+sometimes better than other methods to solve challenging
+OCPs. We further reinforce this claim by deploying the
+tailored SQP in high-frequency nonlinear MPC experiments
+on a torque-controlled manipulator.
+Secondly, we demonstrate the validity of the SQP approach with our tailored ADMM implementation (Section
+IV) in the presence of nonlinear inequality constraints by
+deploying it on real hardware in MPC. Our experiments
+show that the solver can satisfy many nonlinear equality and
+inequality constraints while maintaining real-time solve rates.
+A. Unconstrained case: linear vs nonlinear rollout
+As emphasized in Section V-A, when only the dynamics
+constraint is present, the efficient SQP formulation boils
+down to the GNMS algorithm described in [12]. We propose
+for the first time to benchmark this algorithm against stateof-the-art optimal control solvers, namely DDP [7] and
+FDDP [14], on a set of difficult unconstrained OCPs, using a
+standard line-search procedure and termination criteria drawn
+from the SQP literature.
+1) Benchmark Setup: We evaluate and compare the convergence of the following 4 solvers, namely DDP, FDDP
+using the default line-search from [14], FDDP using the
+proposed filter line-search of Section V-C, and our SQP,
+on a set of increasingly difficult randomized problems. We
+summarized the characteristics of these solvers (multiple or
+single-shooting, type of rollout, and line-search) in Table I.
+The classical single-shooting DDP and its multiple-shooting
+DDP
+FDDP (default LS)
+FDDP (filter LS)
+SQP
+
+Multiple shooting
+No
+Yes
+Yes
+Yes
+
+Rollout
+Nonlinear
+Nonlinear
+Nonlinear
+Linear
+
+Line-search
+Goldstein
+Heuristic [14]
+Filter [65]
+Filter [65]
+
+TABLE I: Solver characteristics.
+variant FDDP (default LS) are the ones implemented in the
+Crocoddyl library [14]. The FDDP (filter LS) was modified
+to incorporate the same filter line-search as our tailored SQP
+implementation. We use the largest possible filter size for
+both solvers, i.e., the maximum number of iterations.
+To evaluate the performance of these solvers, the following
+OCPs are used:
+2 https://github.com/machines-in-motion/mim_solvers
+3 https://github.com/machines-in-motion/StagewiseSQP
+
+Kuka (nx = 14, nu = 7) : the task is to minimize the
+Cartesian distance to an end-effector goal (3D reaching
+task in Cartesian space) under state (joint positions and
+velocities) and control (joint torques) regularization.
+• Quadrotor (nx = 13, nu = 4) : the task is to minimize
+the distance to a desired pose (in SE(3)) under state
+and control regularization.
+• Double Pendulum (nx = 4, nu = 1) : the task is
+to minimize the distance to the upward equilibrium
+position under state and control regularization.
+• Humanoid Taichi (nx = 77, nu = 32) : the task is
+to achieve a desired left foot pose (in SE(3)) while
+maintaining balance on the right stance foot, starting
+from a double foot support configuration, under state
+and control regularization, and log-barrier state limits.
+The Quadrotor, Double Pendulum, and Humanoid Taichi
+examples were copied from the Crocoddyl library. Each
+problem is solved for 100 randomized initial configurations
+or end-effector goals. The maximum number of iterations
+allowed niter depends on the problem. For each problem, the
+solvers are warm-started with the same quasi-static solution.
+We use the same termination criteria, the KKT residual norm
+(20) with tolerance set to ϵSQP = 10−4 on all problems.
+In order to reflect cases where the maximum number of
+iterations is hit without reaching the desired tolerance, we
+use as a metric the number of solved problems for a given
+maximum number of iterations.
+2) Benchmark results: The results are shown in Figure 1.
+On the Kuka example, all solvers exhibit a similar behavior.
+The advantage of multiple-shooting over single-shooting
+becomes clear in the Quadrotor (Figure 1b) and Double
+Pendulum (Figure 1c) examples. These two examples, along
+with the Humanoid taichi (Figure 1d), also highlight clearly
+the benefit of using a filter line-search in FDDP. Most
+importantly, the tailored SQP solves more problems in less
+iterations than all the other solvers. In particular, it is
+clear from these benchmarks that the linear rollout has an
+advantage over the nonlinear one - we recall that FDDP (filter
+LS) (green curves) and SQP (blue curves) only differ by their
+rollouts (nonlinear and linear respectively).
+For MPC applications, the solver’s ability to converge
+to a desired tolerance within a small number of iterations
+is critical because real-time constraints impose a limited
+computation budget. In that respect, all experiments show
+that SQP is able to solve more problems in fewer iterations
+than all other solvers. For instance, in difficult problems like
+the humanoid taichi example, nearly 80% of the problems
+are solved by the SQP within 50 iterations, while the FDDP
+(filter LS) requires almost 200 iterations to solve the same
+amount of problems.
+3) MPC experiments: We implemented FDDP (filter LS)
+and SQP in MPC on the KUKA LBR14 iiwa to execute
+the task of tracking a circle with the end-effector. The cost
+function includes state and torque regularization, and an endeffector position tracking term. The robotic setup follows our
+previous work [1], where more details are available. We used
+an MPC frequency of 500 Hz, with an OCP discretization of
+•
+
+1.0
+
+0.8
+
+0.6
+
+0.4
+
+DDP
+FDDP (default LS)
+FDDP (filter LS)
+SQP
+
+0.2
+
+0.0
+0
+
+20
+
+40
+
+60
+
+Max. number of iterations
+
+80
+
+Percentage of problems solved
+
+Percentage of problems solved
+
+1.0
+
+0.8
+
+0.6
+
+0.4
+
+DDP
+FDDP (default LS)
+FDDP (filter LS)
+SQP
+
+0.2
+
+0.0
+
+100
+
+0
+
+25
+
+50
+
+75
+
+100
+
+125
+
+Max. number of iterations
+
+150
+
+175
+
+200
+
+(a) Kuka reaching task with randomized initial state and niter ∈ (b) Quadrotor pose task with randomized initial state and niter ∈
+[1, 100].
+[1, 200].
+1.0
+
+0.8
+
+0.6
+
+0.4
+
+DDP
+FDDP (default LS)
+FDDP (filter LS)
+SQP
+
+0.2
+
+0.0
+0
+
+100
+
+200
+
+300
+
+Max. number of iterations
+
+400
+
+500
+
+Percentage of problems solved
+
+Percentage of problems solved
+
+1.0
+
+0.8
+
+0.6
+
+0.4
+
+DDP
+FDDP (default LS)
+FDDP (filter LS)
+SQP
+
+0.2
+
+0.0
+0
+
+50
+
+100
+
+150
+
+200
+
+Max. number of iterations
+
+250
+
+300
+
+(c) Double pendulum swing-up task with randomized initial state (d) Humanoid taichi task with randomized end-effector goal and
+and niter ∈ [1, 500].
+niter ∈ [1, 300].
+
+Fig. 1: Percentage of problem solved as a function of the maximum number of iterations allowed niter on 4 randomized
+unconstrained OCPs for the 4 solvers: DDP, FDDP with default line-search, FDDP with filter line-search and our SQP. Our
+SQP exhibits a faster and more robust convergence on difficult problems, such as the humanoid taichi task.
+
+50 ms, 10 nodes in the horizon, and a maximum number of
+SQP iterations niter = 5. At each MPC cycle, the solvers
+are warm-started with the previous trajectory. Although both
+solvers exhibited equal tracking performance, they differed
+in their convergence speeds which corroborates our benchmarks. Indeed the cumulative costs achieved are similar but
+the SQP converges faster to its optimal solution as shown in
+Figure 2.
+B. Constrained case
+We now discuss the performance of the SQP with the proposed tailored ADMM implementation to handle constraints.
+First, we demonstrate our ability to solve constrained multicontact OCPs. Then, we show that the proposed method
+can be used in MPC to satisfy arbitrary constraints on real
+hardware.
+1) Quadruped standing task with friction cones: The
+Solo [69] quadruped is tasked with tracking a desired CoM
+position while maintaining its contact forces within the
+friction cone, i.e.,
+∥FT ∥2 ≤ µFN
+
+(23)
+
+where FT , FN represent the tangential and normal forces,
+respectively. We use 250 nodes in the OCP, with a discretiza-
+
+tion of 20 ms. The CoM must track a circular trajectory of
+13 cm diameter and 0.2 rad s−1 velocity. The QP absolute
+and relative tolerances are set to 10−6 , and the termination
+tolerance to 10−4 . We use the filter line-search with the
+maximum size of the KKT residual termination criteria
+as previously described. The same OCP was solved with
+and without constraint (23). The solver converged in 34
+iterations in the unconstrained case and in 31 iterations
+in the constrained case. Note that the merit function with
+default parameter µγ = µc = 1 was used in this illustrative
+example, which seems to benefit the solver’s convergence
+in the constrained case over the unconstrained case. The
+accompanying video shows the corresponding motion, and
+snapshots are provided in Figure 4. Figure 5 shows the ratio
+of tangential over normal forces of the unconstrained and
+constrained solutions. One can see that the task cannot be
+achieved without slipping when no constraint is enforced.
+Hence our tailored SQP implementation can enforce nonlinear inequality constraints (Lorentz cones) while also keeping
+the number of iterations low.
+2) MPC experiments setup: We deployed our tailored
+SQP implementation in MPC on the KUKA robot to achieve
+various constrained tasks. In all the experiments, the MPC
+
+KKT residual norm
+
+5e-04
+
+SQP
+FDDP
+Tolerance
+
+4e-04
+3e-04
+2e-04
+1e-04
+0e+00
+
+Number of iterations
+
+5
+4
+3
+2
+1
+0
+
+0
+
+5
+
+10
+
+15
+Time (s)
+
+20
+
+25
+
+Fig. 2: KKT residual norm and number of iterations for
+the circle tracking task. Our SQP solver converges within
+3 iterations while FDDP hits the maximum number of
+iterations (niter = 5) without reaching the desired tolerance.
+Constraint
+Constrained
+Unconstrained
+
+Joint position q1 (rad)
+
+0.6
+
+0.4
+
+0.2
+
+0.0
+
+−0.2
+
+−0.4
+0
+
+5
+
+10
+
+Time (s)
+
+15
+
+20
+
+25
+
+Fig. 3: Joint position q1 for the circle task in the constrained
+(blue) and unconstrained case (green). The gray-shaded area
+represents the infeasible region.
+
+MPC frequency to 100 Hz (vs 500 Hz in the unconstrained
+experiments) was beneficial since it allowed to increase the
+maximum number of QP and SQP iterations and thereby a
+better convergence.
+3) MPC experiments results: In the first experiment, the
+robot must track the circle while keeping the position of
+the first joint within [−0.05 rad, +0.05 rad]. The position
+of the constrained joint is shown in Figure 3. Without the
+constraint, the circle tracking average absolute error is lower
+(3.3 cm) than the constrained case (8.5 cm) but the constraint
+is largely violated. Increasing the end-effector tracking cost
+weight in the constrained case leads to an improved tracking
+performance but a more aggressive behavior on the robot due
+to an increased constraint saturation.
+In the second experiment, an end-effector constraint was
+imposed during the circle task. Figures 6a, 6b show the
+Cartesian space trajectories for circle tasks in which the
+end-effector is constrained to lie within specific half-spaces.
+We observed that increasing the velocity of the reference
+circle had the effect of smoothing out the edges of the
+square. This is behavior can be explained by the prediction
+horizon which enables the controller to anticipate constraints:
+remaining some distance away from the constraint boundary
+is the optimal way to minimize the objective while preventing
+constraints violation in the future. This confirms the intuition
+that the horizon is crucial in constrained dynamic tasks.
+We were able to achieve many other constrained tasks on
+the robot that are not formally described in this article due
+to space limits, but illustrated in the accompanying video.
+For example, the robot can also be constrained to move
+only along a vertical line in Cartesian space (i.e. equality
+constraint Y = 0 in Figure (6)), which shows the ability
+to satisfy tight constraints. We were also able to enforce
+the end-effector to remain within the horizontal plane, even
+under external disturbances from a human operator. In that
+case, as seen in the video, the robot is able to adapt automatically its configuration in order to satisfy the constraint.
+This confirms that arbitrary constraints can be enforced at
+real-time rates, without having to re-define the task (i.e. no
+re-tuning the cost function weights), which demonstrates the
+practicality and versatility of the approach.
+VII. D ISCUSSION
+
+runs at 100 Hz, the OCP discretization is 50 ms and the horizon has 10 nodes. We allow a maximum of 4 SQP iterations
+and 50 QP iterations. Relative and absolute tolerances for
+the QP are 10−5 and 10−4 for the SQP. The size of the filter
+for the line-search is set to 1. The ρ penalty parameter is
+not reset throughout the iterations, and the primal solution is
+warm-started with the previous trajectory (no warm-start on
+the dual variables y and z which are reset to 0).
+Our experiments focus on constrained circle tracking
+tasks: the robot must track a circle with its end-effector
+while satisfying various constraints in the joint space or
+in the end-effector space. The objective includes state and
+control regularization terms and a term to follow a circle with
+the end-effector (3D task). We observed that reducing the
+
+The benchmark introduced in the unconstrained case questions what allowed this improvement. We argue that FDDP
+appears to be a hybrid method laying between single and
+multiple shooting. This idea comes both from our results on
+the Humanoid taichi robot, where FDDP behaves like DDP
+and from the theory, as it is known that once the gaps close in
+FDDP, they cannot re-open again. Consequently, we believe
+that the improvement observed in the benchmark comes from
+the multiple shooting formulation.
+Our work follows the line of work started in the 1990s
+[22], [34], [36]–[39], [41] showing that standard optimization tools can be implemented specifically for OCPs by
+exploiting time-induced sparsity. We simply use the same
+tenets with SQP and ADMM as they are well-established
+
+Fig. 4: Snapshots of standing motion. The red arrows represent the contact forces and the white cones are the friction
+constraint (µ = 0.8). In the 3rd and 4th frames, one can see the tangential forces lying on the boundary on the friction cone.
+5
+
+FL force ratio
+
+4
+3
+
+Unconstrained
+Constrained
+Friction cone ( =0.8)
+
+based on the ADMM algorithm [63]. Both of these are
+desirable in non-linear MPC where obtaining a solution is
+essential during deployment.
+
+2
+1
+00
+5
+
+VIII. C ONCLUSION
+1
+
+2
+
+1
+
+2
+
+3
+
+4
+
+5
+
+3
+
+4
+
+5
+
+HL force ratio
+
+4
+3
+2
+1
+00
+
+Time (s)
+
+Fig. 5: Solo center-of-mass tracking task with friction cone
+constraints. The continuous lines represent the ratio FFNT at the
+front left foot, and the gray dashed line represent the friction
+cone constraint. Observe in the Fz plots the unconstrained
+OCP solution (green) crossing the friction cone constraint
+while the constrained OCP solution (blue) remains within
+the constraint.
+
+in the optimization community. Additionally, ADMM has
+properties (easy to warm start and quick convergence to
+few iterations) that benefit MPC [63]. However, we would
+like to insist on the fact that the same principles could
+be applied to other optimization techniques. Future work
+would be especially interesting to modify such state-of-theart QP solvers to exploit stagewise sparsity given that they
+outperformed OSQP, in general, [70], [71].
+Finally, a direct by-product of the tailored implementation
+is the Riccati-like gains that can also enforce the additional
+inequality constraints. This is a natural consequence of
+using Riccati recursions to efficiently solve the sparse linear
+matrix equation that appears in the QP solver. However, it is
+important to note that so far, we have not used these Riccati
+gains on a real robot in MPC. A study on their effect on
+control performance and constraint satisfaction remains to
+be done.
+During deployment, we usually early terminate the
+ADMM-based QP in the interest of higher re-planning
+frequency (100 Hz). A lower-quality solution seems to be
+sufficient to ensure higher reactivity and compliance on the
+robot. One key advantage of ADMM in this context is that
+the sub-QP solver can reach a reasonable solution in a few
+iterations and also guarantee the availability of some solution
+even when the constraints may be infeasible because it is
+
+A central message of this paper is that the existing
+nonlinear optimization literature already provides sufficient
+tools to solve OCPs with and without constraints in real time
+and thereby achieve state-of-the-art nonlinear MPC on real
+robots. We substantiated this message through a tailored,
+sparsity-exploiting SQP formulation that provided a unifying framework clarifying the connections between existing
+solvers from the robotics literature and a practical approach
+to achieving state-of-the-art MPC. We demonstrated through
+various benchmarks and hardware experiments that such
+a tailored SQP implementation outperformed state-of-theart solvers based on DDP on challenging unconstrained
+problems. We then showed that it can efficiently solve
+arbitrary constrained nonlinear OCPs for MPC applications.
+In particular, we could enforce many nonlinear constraints
+on a real robot in MPC.
+In conclusion, it is extremely encouraging to see that
+standard optimization techniques can already push the limits
+of closed-loop MPC for torque-controlled robots. The recent
+advances in Quadratic Programming suggest that more improvements are possible. This opens the way toward more
+advanced experimental studies of nonlinear closed-loop MPC
+on complex systems. In light of these results, we believe that
+as a robotics community, it might be worth investing more
+time in re-implementing efficiently established algorithms
+developed in the control community to push state-of-theart constrained MPC approaches for real-world robotics
+applications.
+R EFERENCES
+[1] S. Kleff, A. Meduri, R. Budhiraja, N. Mansard, and L. Righetti, “Highfrequency nonlinear model predictive control of a manipulator,” in
+2021 IEEE International Conference on Robotics and Automation
+(ICRA). IEEE, 2021, pp. 7330–7336.
+[2] A. Meduri, P. Shah, J. Viereck, M. Khadiv, I. Havoutis, and L. Righetti,
+“Biconmp: A nonlinear model predictive control framework for whole
+body motion planning,” IEEE Transactions on Robotics, 2023.
+[3] M. Neunert, M. Stäuble, M. Giftthaler, C. D. Bellicoso, J. Carius,
+C. Gehring, M. Hutter, and J. Buchli, “Whole-body nonlinear model
+predictive control through contacts for quadrupeds,” IEEE Robotics
+and Automation Letters, vol. 3, no. 3, pp. 1458–1465, 2018.
+[4] J.-P. Sleiman, F. Farshidian, M. V. Minniti, and M. Hutter, “A unified
+mpc framework for whole-body dynamic locomotion and manipulation,” IEEE Robotics and Automation Letters, vol. 6, no. 3, pp. 4688–
+4695, 2021.
+
+0.8
+
+1.0
+
+Constraint
+Reference
+Measured
+
+0.7
+
+0.8
+
+0.6
+
+0.7
+
+0.5
+
+Z (m)
+
+Z (m)
+
+Constraint
+Reference
+Measured
+
+0.9
+
+0.4
+
+0.6
+0.5
+0.4
+
+0.3
+
+0.3
+
+0.2
+
+0.2
+
+−0.3
+
+−0.2
+
+−0.1
+
+0.0
+
+Y (m)
+
+0.1
+
+0.2
+
+0.3
+
+0.1
+
+−0.4
+
+−0.2
+
+0.0
+
+Y (m)
+
+0.2
+
+0.4
+
+(a) The end-effector is constrained to lie within the y > 0 half- (b) The end-effector is constrained to lie within the intersection of
+plane.
+4 half-planes.
+
+Fig. 6: End-effector position trajectories in the (y, z)-plane during the circle tracking task, subject to nonlinear constraints
+in Cartesian space. The gray-shaded areas represent the infeasible regions.
+
+[5] J. Koenemann, A. Del Prete, Y. Tassa, E. Todorov, O. Stasse,
+M. Bennewitz, and N. Mansard, “Whole-body model-predictive control applied to the hrp-2 humanoid,” in 2015 IEEE/RSJ International
+Conference on Intelligent Robots and Systems (IROS). IEEE, 2015,
+pp. 3346–3351.
+[6] E. Dantec, M. Naveau, P. Fernbach, N. Villa, G. Saurel, O. Stasse,
+M. Taı̈x, and N. Mansard, “Whole-body model predictive control
+for biped locomotion on a torque-controlled humanoid robot,” in
+2022 IEEE-RAS 21st International Conference on Humanoid Robots
+(Humanoids). IEEE, 2022, pp. 638–644.
+[7] D. Mayne, “A second-order gradient method for determining optimal
+trajectories of non-linear discrete-time systems,” International Journal
+of Control, vol. 3, no. 1, pp. 85–95, 1966.
+[8] W. Li and E. Todorov, “Iterative linear quadratic regulator design for
+nonlinear biological movement systems.” in ICINCO (1). Citeseer,
+2004, pp. 222–229.
+[9] A. Sideris and J. E. Bobrow, “An efficient sequential linear quadratic
+algorithm for solving nonlinear optimal control problems,” in Proceedings of the 2005, American Control Conference, 2005. IEEE, 2005,
+pp. 2275–2280.
+[10] Y. Tassa, N. Mansard, and E. Todorov, “Control-limited differential
+dynamic programming,” in 2014 IEEE International Conference on
+Robotics and Automation (ICRA). IEEE, 2014, pp. 1168–1175.
+[11] B. Plancher, Z. Manchester, and S. Kuindersma, “Constrained unscented dynamic programming,” in 2017 IEEE/RSJ International
+Conference on Intelligent Robots and Systems (IROS). IEEE, 2017,
+pp. 5674–5680.
+[12] M. Giftthaler, M. Neunert, M. Stäuble, J. Buchli, and M. Diehl,
+“A family of iterative gauss-newton shooting methods for nonlinear
+optimal control,” in 2018 IEEE/RSJ International Conference on
+Intelligent Robots and Systems (IROS). IEEE, 2018, pp. 1–9.
+[13] T. A. Howell, B. E. Jackson, and Z. Manchester, “Altro: A fast
+solver for constrained trajectory optimization,” in 2019 IEEE/RSJ
+International Conference on Intelligent Robots and Systems (IROS).
+IEEE, 2019, pp. 7674–7679.
+[14] C. Mastalli, R. Budhiraja, W. Merkt, G. Saurel, B. Hammoud,
+M. Naveau, J. Carpentier, L. Righetti, S. Vijayakumar, and
+N. Mansard, “Crocoddyl: An efficient and versatile framework for
+multi-contact optimal control,” in 2020 IEEE International Conference
+on Robotics and Automation (ICRA). IEEE, 2020, pp. 2536–2542.
+
+[15] J. Marti-Saumell, J. Solà, C. Mastalli, and A. Santamaria-Navarro,
+“Squash-box feasibility driven differential dynamic programming,” in
+2020 IEEE/RSJ International Conference on Intelligent Robots and
+Systems (IROS). IEEE, 2020, pp. 7637–7644.
+[16] Y. Aoyama, G. Boutselis, A. Patel, and E. A. Theodorou, “Constrained
+differential dynamic programming revisited,” in 2021 IEEE International Conference on Robotics and Automation (ICRA). IEEE, 2021,
+pp. 9738–9744.
+[17] C. Mastalli, W. Merkt, J. Marti-Saumell, H. Ferrolho, J. Solà,
+N. Mansard, and S. Vijayakumar, “A feasibility-driven approach to
+control-limited ddp,” Autonomous Robots, vol. 46, no. 8, pp. 985–
+1005, 2022.
+[18] W. Jallet, N. Mansard, and J. Carpentier, “Implicit differential dynamic
+programming,” in 2022 International Conference on Robotics and
+Automation (ICRA). IEEE, 2022, pp. 1455–1461.
+[19] W. Jallet, A. Bambade, N. Mansard, and J. Carpentier, “Constrained
+differential dynamic programming: A primal-dual augmented lagrangian approach,” in 2022 IEEE/RSJ International Conference on
+Intelligent Robots and Systems (IROS). IEEE, 2022, pp. 13 371–
+13 378.
+[20] J. N. Nganga, H. Li, and P. Wensing, “Second-order differential
+dynamic programming for whole-body mpc of legged robots,” in
+Embracing Contacts-Workshop at ICRA 2023, 2023.
+[21] S. Wright, J. Nocedal et al., “Numerical optimization,” Springer
+Science, vol. 35, no. 67-68, p. 7, 1999.
+[22] S. J. Wright, “Solution of discrete-time optimal control problems on
+parallel computers,” Parallel Computing, vol. 16, no. 2-3, pp. 221–237,
+1990.
+[23] B. O’Donoghue, G. Stathopoulos, and S. Boyd, “A splitting method for
+optimal control,” IEEE Transactions on Control Systems Technology,
+vol. 21, no. 6, pp. 2432–2442, 2013.
+[24] D. Kouzoupis, G. Frison, A. Zanelli, and M. Diehl, “Recent advances
+in quadratic programming algorithms for nonlinear model predictive
+control,” Vietnam Journal of Mathematics, vol. 46, no. 4, pp. 863–882,
+2018.
+[25] G. Frison and M. Diehl, “Hpipm: a high-performance quadratic
+programming framework for model predictive control,” IFACPapersOnLine, vol. 53, no. 2, pp. 6563–6569, 2020.
+[26] R. Verschueren, G. Frison, D. Kouzoupis, J. Frey, N. v. Duijkeren,
+A. Zanelli, B. Novoselnik, T. Albin, R. Quirynen, and M. Diehl, “aca-
+
+[27]
+
+[28]
+
+[29]
+
+[30]
+[31]
+[32]
+[33]
+
+[34]
+
+[35]
+
+[36]
+
+[37]
+[38]
+[39]
+[40]
+
+[41]
+[42]
+
+[43]
+[44]
+[45]
+[46]
+[47]
+[48]
+
+dos—a modular open-source framework for fast embedded optimal
+control,” Mathematical Programming Computation, vol. 14, no. 1, pp.
+147–183, 2022.
+D. Murray and S. Yakowitz, “Differential dynamic programming and
+newton’s method for discrete optimal control problems,” Journal of
+Optimization Theory and Applications, vol. 43, no. 3, pp. 395–414,
+1984.
+K. Baumgärtner, F. Messerer, and M. Diehl, “Local convergence
+behaviour of generalized gauss-newton multiple shooting, single
+shooting and differential dynamic programming,” arXiv preprint
+arXiv:2301.04047, 2023.
+R. Grandia, F. Farshidian, R. Ranftl, and M. Hutter, “Feedback mpc
+for torque-controlled legged robots,” in 2019 IEEE/RSJ International
+Conference on Intelligent Robots and Systems (IROS). IEEE, 2019,
+pp. 4730–4737.
+H. G. Bock and K.-J. Plitt, “A multiple shooting algorithm for direct
+solution of optimal control problems,” IFAC Proceedings Volumes,
+vol. 17, no. 2, pp. 1603–1608, 1984.
+L.-z. Liao and C. A. Shoemaker, “Advantages of differential dynamic
+programming over newton’s method for discrete-time optimal control
+problems,” Cornell University, Tech. Rep., 1992.
+S. Zimmermann, R. Poranne, and S. Coros, “Dynamic manipulation
+of deformable objects with implicit integration,” IEEE Robotics and
+Automation Letters, vol. 6, no. 2, pp. 4209–4216, 2021.
+J. C. Dunn and D. P. Bertsekas, “Efficient dynamic programming
+implementations of newton’s method for unconstrained optimal control
+problems,” Journal of Optimization Theory and Applications, vol. 63,
+no. 1, pp. 23–38, 1989.
+J. D. O. Pantoja and D. Mayne, “Sequential quadratic programming
+algorithm for discrete optimal control problems with control inequality
+constraints,” International Journal of Control, vol. 53, no. 4, pp. 823–
+836, 1991.
+G. Di Pillo, L. Grippo, and F. Lampariello, “A class of structured
+quasi-newton algorithms for optimal control problems,” in Applications of Nonlinear Programming to Optimization and Control.
+Elsevier, 1984, pp. 101–107.
+C. Dohrmann and R. Robinett, “Efficient sequential quadratic programming implementations for equality-constrained discrete-time optimal control,” Journal of Optimization Theory and Applications,
+vol. 95, pp. 323–346, 1997.
+S. J. Wright, “Interior point methods for optimal control of discrete
+time systems,” Journal of Optimization Theory and Applications,
+vol. 77, no. 1, pp. 161–187, 1993.
+M. C. Steinbach, A structured interior point SQP method for nonlinear
+optimal control problems. Springer, 1994.
+C. V. Rao, S. J. Wright, and J. B. Rawlings, “Application of interiorpoint methods to model predictive control,” Journal of Optimization
+Theory and Applications, vol. 99, no. 3, pp. 723–757, 1998.
+J. Eckstein and M. C. Ferris, “Operator-splitting methods for monotone
+affine variational inequalities, with a parallel application to optimal
+control,” INFORMS Journal on Computing, vol. 10, no. 2, pp. 218–
+235, 1998.
+C. Dohrmann and R. Robinett, “Dynamic programming method for
+constrained discrete-time optimal control,” Journal of Optimization
+Theory and Applications, vol. 101, pp. 259–283, 1999.
+H. J. Ferreau, H. G. Bock, and M. Diehl, “An online active set strategy
+to overcome the limitations of explicit mpc,” International Journal of
+Robust and Nonlinear Control: IFAC-Affiliated Journal, vol. 18, no. 8,
+pp. 816–830, 2008.
+L. A. Rodriguez and A. Sideris, “An active set method for constrained
+linear quadratic optimal control,” in Proceedings of the 2010 American
+Control Conference. IEEE, 2010, pp. 5197–5202.
+Y. Wang and S. Boyd, “Fast model predictive control using online optimization,” IEEE Transactions on control systems technology, vol. 18,
+no. 2, pp. 267–278, 2009.
+L. Vanroye, A. Sathya, J. De Schutter, and W. Decré, “Fatrop: A
+fast constrained optimal control problem solver for robot trajectory
+optimization and control,” arXiv preprint arXiv:2303.16746, 2023.
+A. Wächter and L. T. Biegler, On the implementation of an interiorpoint filter line-search algorithm for large-scale nonlinear programming, 2006, vol. 106, no. 1.
+R. Grandia, F. Jenelten, S. Yang, F. Farshidian, and M. Hutter, “Perceptive Locomotion Through Nonlinear Model-Predictive Control,” IEEE
+Transactions on Robotics, vol. 39, no. 5, pp. 3402–3421, 2023.
+A. Romero, R. Penicka, and D. Scaramuzza, “Time-Optimal Online
+
+View publication stats
+
+[49]
+[50]
+
+[51]
+[52]
+
+[53]
+[54]
+[55]
+[56]
+[57]
+[58]
+[59]
+[60]
+
+[61]
+[62]
+
+[63]
+
+[64]
+[65]
+[66]
+[67]
+
+[68]
+[69]
+
+[70]
+[71]
+
+Replanning for Agile Quadrotor Flight,” IEEE Robotics and Automation Letters, vol. 7, no. 3, pp. 7730–7737, 2022.
+A. Bratta, M. Focchi, N. Rathod, and C. Semini, “OptimizationBased Reference Generator for Nonlinear Model Predictive Control
+of Legged Robots,” Robotics, vol. 12, no. 1, pp. 1–18, 2023.
+A. Oleinikov, S. Soltan, Z. Balgabekova, A. Bemporad, and
+M. Rubagotti, “Scenario-based model predictive control with
+probabilistic human predictions for human–robot coexistence,” Control
+Engineering Practice, vol. 142, no. November 2023, p. 105769, 2024.
+[Online]. Available: https://doi.org/10.1016/j.conengprac.2023.105769
+S. Katayama, M. Murooka, and Y. Tazaki, “Model predictive control
+of legged and humanoid robots: models and algorithms,” Advanced
+Robotics, vol. 37, no. 5, pp. 298–315, 2023.
+Y. Tassa, T. Erez, and E. Todorov, “Synthesis and stabilization of
+complex behaviors through online trajectory optimization,” in 2012
+IEEE/RSJ International Conference on Intelligent Robots and Systems.
+IEEE, 2012, pp. 4906–4913.
+B. Stellato, G. Banjac, P. Goulart, A. Bemporad, and S. Boyd, “Osqp:
+An operator splitting solver for quadratic programs,” Mathematical
+Programming Computation, vol. 12, no. 4, pp. 637–672, 2020.
+J. Nocedal and S. J. Wright, Numerical optimization. Springer, 1999.
+D. Q. Mayne, J. B. Rawlings, C. V. Rao, and P. O. Scokaert,
+“Constrained model predictive control: Stability and optimality,” Automatica, vol. 36, no. 6, pp. 789–814, jun 2000.
+W. Lee, “Tridiagonal matrices: Thomas algorithm,” MS6021, Scientific
+Computation, University of Limerick, 2011.
+M. Diehl, “Lecture notes on optimal control and estimation,” Lecture
+Notes on Optimal Control and Estimation, 2014.
+S. J. Wright, “Partitioned dynamic programming for optimal control,”
+SIAM Journal on optimization, vol. 1, no. 4, pp. 620–642, 1991.
+J. V. Frasch, S. Sager, and M. Diehl, “A parallel quadratic programming method for dynamic optimization problems,” Mathematical
+programming computation, vol. 7, pp. 289–329, 2015.
+B. L. Nicholson, W. Wan, S. Kameswaran, and L. T. Biegler, “Parallel
+cyclic reduction strategies for linear systems that arise in dynamic optimization problems,” Computational Optimization and Applications,
+vol. 70, pp. 321–350, 2018.
+S. Särkkä and Á. F. Garcı́a-Fernández, “Temporal parallelization of
+dynamic programming and linear quadratic control,” IEEE Transactions on Automatic Control, vol. 68, no. 2, pp. 851–866, 2022.
+S. Caron, A. Zaki, P. Otta, D. Arnström, and J. Carpentier,
+“qpsolver benchmark: Benchmark for quadratic programming solvers
+available in Python,” Sep. 2023. [Online]. Available: https://github.
+com/qpsolvers/qpsolvers benchmark
+S. Boyd, N. Parikh, E. Chu, B. Peleato, J. Eckstein et al., “Distributed optimization and statistical learning via the alternating direction method of multipliers,” Foundations and Trends® in Machine
+learning, vol. 3, no. 1, pp. 1–122, 2011.
+G. Frison, “General rights Algorithms and Methods for HighPerformance Model Predictive Control,” 2015. [Online]. Available:
+www.compute.dtu.dk
+R. Fletcher and S. Leyffer, “Nonlinear programming without a penalty
+function,” Mathematical programming, vol. 91, pp. 239–269, 2002.
+M. Diehl, H. G. Bock, H. Diedam, P. B. Wieber, P.-b. W. Fast, and
+D. Multiple, “Fast Direct Multiple Shooting Algorithms for Optimal
+Robot Control,” p. 28, 2009.
+J. Carpentier, G. Saurel, G. Buondonno, J. Mirabel, F. Lamiraux,
+O. Stasse, and N. Mansard, “The Pinocchio C++ library: A fast
+and flexible implementation of rigid body dynamics algorithms and
+their analytical derivatives,” Proceedings of the 2019 IEEE/SICE
+International Symposium on System Integration, SII 2019, pp. 614–
+619, 2019.
+J. Carpentier and N. Mansard, “Analytical derivatives of rigid body
+dynamics algorithms,” in Robotics: Science and systems (RSS 2018),
+2018.
+F. Grimminger, A. Meduri, M. Khadiv, J. Viereck, M. Wüthrich,
+M. Naveau, V. Berenz, S. Heim, F. Widmaier, T. Flayols, J. Fiene,
+A. Badri-Spröwitz, and L. Righetti, “An open torque-controlled modular robot architecture for legged locomotion research,” IEEE Robotics
+and Automation Letters, vol. 5, no. 2, pp. 3650–3657, 2020.
+A. Bambade, S. El-Kazdadi, A. Taylor, and J. Carpentier, “Proxqp:
+Yet another quadratic programming solver for robotics and beyond,”
+in RSS 2022-Robotics: Science and Systems, 2022.
+R. Schwan, Y. Jiang, D. Kuhn, and C. N. Jones, “Piqp: A proximal interior-point quadratic programming solver,” arXiv preprint
+arXiv:2304.00290, 2023.
+
+

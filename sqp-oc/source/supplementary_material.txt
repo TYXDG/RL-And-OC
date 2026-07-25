@@ -1,0 +1,901 @@
+Supplementary Material of
+Stagewise Implementations of Sequential Quadratic
+Programming for Model-Predictive Control
+Armand Jordana∗,1 , Sébastien Kleff∗,1 , Avadesh Meduri∗,1 ,
+Justin Carpentier2 , Nicolas Mansard3 and Ludovic Righetti1
+Let’s consider the following Quadratic Program:
+
+min
+
+x1:T ,u0:T −1
+
+xTT QT xT
+
++
+
+xTT qT
+
++
+
+T
+−1 
+X
+k=0
+
+xk
+uk
+
+T 
+
+Qk
+SkT
+
+Sk
+Rk
+
+  T  
+xk
+q
+xk
++ k
+uk
+rk
+uk
+
+
+
+(1)
+
+subject to x0 = 0,
+0 ≤ k < T.
+
+xk+1 = Ak xk + Bk uk + γk+1 ,
+The associated Lagrangian has the following form:
+T
+−1 
+X
+
+L(x1:T , u0:T −1 , λ1:T ) = xTT QT xT + xTT qT +
+
+k=0
+
+xk
+uk
+
+T 
+
+Qk
+SkT
+
+Sk
+Rk
+
+  T  
+xk
+q
+xk
++ k
+uk
+rk
+uk
+
+
+
+− λTk+1 (xk+1 − Ak xk − Bk uk − γk+1 )
+
+(2)
+
+The KKT condition can be written as a set of linear equations:
+QT xT + qT = λT
+Qk xk + Sk uk + qk + ATk λk+1
+Rk uk + SkT xk + rk + BkT λk+1
+
+(3)
+
+= λk
+
+∀k ≤ 1
+
+(4)
+
+=0
+
+∀k < T
+
+(5)
+
+xk+1 = Ak xk + Bk uk + γk+1 .
+Proposition 1. The KKT conditions
+More precisely:
+
+Γ1 M1T
+M1 Γ2
+
+ 0
+M2
+
+ 0
+0
+ .
+..
+ .
+ .
+.
+0
+0
+
+(6)
+
+can be written as block tri-diagonal symmetric matrix equation.
+0
+M2T
+Γ3
+M3
+..
+.
+0
+
+0
+0
+M3T
+Γ4
+..
+.
+0
+
+···
+···
+···
+..
+.
+..
+.
+..
+.
+
+   
+0
+s1
+g1
+ s2   g2 
+0
+   
+   
+0
+  s3   g3 
+= 
+
+s4 
+0 
+  g4 
+..  
+ ..   .. 
+.  .   . 
+sT
+gT
+ΓT
+
+(7)
+
+where:
+This work was in part supported by the National Science Foundation grants 1932187, 1925079, 2026479, 2222815
+and 2315396.
+∗ Equal contribution - first authors listed in alphabetical order.
+1 Machines in Motion Laboratory, New York University, USA firstname.lastname@nyu.edu
+2
+Inria - Département d’Informatique de l’École normale supérieure, PSL Research University.
+
+justin.carpentier@inria.fr
+3
+
+LAAS-CNRS, Université de Toulouse, CNRS, Toulouse. nmansard@laas.fr
+
+1
+
+
+
+Rk−1
+Γk =  0
+−Bk−1
+
+
+T
+−Bk−1
+I ,
+0
+
+
+uk−1
+sk =  xk ,
+−λk
+
+0
+Qk
+I
+
+and
+
+
+0 SkT
+
+0
+Mk = 0
+0 −Ak
+
+
+−rk−1
+gk =  −qk 
+γk
+
+
+0
+0
+0
+(8)
+
+.
+Proof. We find that:
+• For k = 1, as x0 = 0:
+
+
+ 
+
+0
+R0 u0 + B0T λ1
+Γ1 s1 + M1T s2 =  Q1 x1 − λ1  + S1 u1 + AT1 λ2 
+−B0 u0 + x1
+0
+
+ 
+
+T
+T
+R0 u0 + S0 x0 + B0 λ1
+−r0
+= Q1 x1 − λ1 + S1 u1 + AT1 λ2  = −q1 
+γ1
+−A0 x0 − B0 u0 + x1
+
+(9)
+
+• For 1 < k < T :
+
+ 
+ 
+
+T
+T
+Sk−1
+xk−1
+Rk−1 uk−1 + Bk−1
+λk
+0
++
+ + Sk uk + ATk λk+1 
+0
+Qk xk − λk
+=
+0
+−Ak−1 xk−1
+−Bk−1 uk−1 + xk
+
+
+−rk−1
+=  −qk  = gk
+(10)
+γk
+
+
+Mk−1 sk−1 + Γk sk + MkT sk+1
+
+• For k = T :
+ 
+ 
+
+−rT −1
+STT −1 xT −1
+RT −1 uT −1 + BTT −1 λT
++
+ =  −qT  = gT
+0
+QT xT − λT
+MT −1 sT −1 + ΓT sT = 
+γT
+−AT −1 xT −1
+−BT −1 uT −1 + xT
+
+
+(11)
+
+Proposition 2. By applying Thomas algorithm, we recover the well-known Ricatti recursions. Specifically, the backward pass can be done by initializing VT = QT and vT = qT , and then by applying
+the following equations:
+hk = rk + BkT (vk+1 + Vk+1 γk+1 )
+Gk =
+Hk =
+
+(12)
+
+SkT
+
++ BnT Vk+1 Ak
+Rk + BkT Vk+1 Bk
+
+Kk =
+kk =
+
+−Hk−1 Gk
+−Hk−1 hk
+
+Vk = Qk + ATk Vk+1 Ak − KkT Hk Kk
+vk = q k +
+
+KkT rk
+
+(13)
+
+T
+
++ (Ak + Kk Bk ) (vk+1 + Vk+1 γk+1 )
+
+Then, the forward pass initializes ∆x0 = 0 and unrolls the linearized dynamics:
+∆xk+1 = (Ak + Bk Kk )∆xk + Bk kk + γk+1
+
+(14)
+
+∆uk = Kk ∆xk + kk
+
+(15)
+
+λk = Vk ∆xk + vk
+
+(16)
+
+2
+
+Proof. For this proof, we will extensively use the following lemma:
+Lemma 0.1.
+
+−1 
+−1
+−1
+Hk+1
+Hk+1
+BkT
+Rk
+0
+−BkT
+−1
+−1
+ 0
+
+
+Vk+1
+I
+Bk Hk+1
+Bk Hk+1 BkT
+=
+−1
+−1
+−Bk
+I
+0
+−Vk+1 Bk Hk+1 I − Vk+1 Bk Hk+1
+BkT
+
+  −1
+
+Hk+1
+0
+0
+I BkT
+0 0
+0
+−1
+ I BkT
+I + 0
+Bk Hk+1
+0
+= 0 0
+−1
+0 I −Vk+1
+I BkT
+0
+0
+−Vk+1 Bk Hk+1
+
+
+−1
+−Hk+1
+BkT Vk+1
+−1
+
+I − Bk Hk+1
+BkT Vk+1
+−1
+T
+−Vk+1 (I − Bk Hk+1 Bk Vk+1 )
+
+−BkT Vk+1
+−BkT Vk+1 
+−BkT Vk+1
+
+where Hk = Rk + BkT Vk+1 Bk
+Thomas algorithm uses a forward recursion in order
+
+I
+0
+0
+0
+Γ̄−1
+M
+I
+0
+0
+1
+ 2
+−1
+ 0
+Γ̄
+M
+I
+0
+2
+3
+
+ 0
+−1
+0
+Γ̄4 M3 I
+ .
+..
+..
+..
+ .
+.
+ .
+.
+.
+0
+0
+0
+0
+
+to find a equivalent linear system of the form:
+   
+··· 0
+ḡ1
+s1
+ s2   ḡ2 
+· · · 0
+   
+   
+· · · 0
+  s3   ḡ3 
+..
+(17)
+= 
+
+s4 
+. 0 
+  ḡ4 
+..  
+..
+ ..   .. 
+. .  .   . 
+..
+. I
+ḡT
+sT
+
+Then, a forward recursion recovers the sequence: s1 , · · · sT . This can be formalized in the following
+way:
+Algorithm 1: Thomas algorithm
+1
+2
+
+Γ̄T ← ΓT
+ḡT ← Γ−1
+T gT
+/* backward pass
+
+3
+4
+5
+
+*/
+
+for k ← 1 to T − 1 do
+Γ̄k ← Γk − MkT Γ̄−1
+k+1 Mk
+−1
+ḡk ← Γ̄k (gk − MkT ḡk+1 )
+/* forward pass
+
+6
+7
+8
+
+*/
+
+s1 ← ḡ1
+for k ← 1 to T − 1 do
+sk+1 ← ḡk+1 − Γ̄−1
+k+1 Mk sk
+Let’s now show by recursion that:
+
+
+Rk−1
+Γ̄k =  0
+−Bk−1
+
+0
+Vk
+I
+
+
+T
+−Bk−1
+I 
+0
+
+(18)
+
+and that:
+
+
+−rk−1
+ −vk 
+ḡk = Γ̄−1
+k
+γk
+Backward pass:
+• k=T
+As VT = QT and vT = qT by definition, the property is true for k = T .
+• If the property is true for k + 1,
+
+3
+
+(19)
+
+Γ̄k = Γk − MkT Γ̄−1
+(20)
+k+1 Mk
+
+ 
+
+ 
+
+T
+T −1
+T
+Rk−1
+0 −Bk−1
+0 0
+0
+Rk
+0
+−Bk
+0 Sk
+0
+Vk+1
+I  0
+0
+0
+Qk
+I  − Sk 0 −ATk   0
+= 0
+0 0
+0
+−Bk
+I
+0
+0 −Ak 0
+−Bk−1 I
+0
+
+
+T
+Rk−1
+0 −Bk−1
+Qk
+I 
+= 0
+−Bk−1 I
+0
+
+
+0
+0
+0
+
+
+−1
+−1
+−1
+−1
++ ATk Vk+1 Bk Hk+1
+SkT − −Sk Hk+1
+BkT Vk+1 + ATk Vk+1 (I − Bk Hk+1
+BkT Vk+1 ) Ak 0
+− 0 Sk Hk+1
+0
+0
+0
+
+
+T
+Rk−1
+0 −Bk−1
+Vk
+I 
+= 0
+−Bk−1 I
+0
+where
+−1
+−1
+Vk = Qk + ATk Vk+1 Ak − Sk Hk+1
+(SkT + BkT Vk+1 Ak ) − ATk Vk+1 Bk Hk+1
+(SkT + BkT Vk+1 Ak )
+
+= Qk + ATk Vk+1 Ak − (Sk + ATk Vk+1 Bk )(Rk + BkT Vk+1 Bk )−1 (SkT + BkT Vk+1 Ak )
+
+(21)
+
+then, we have:
+− Γ̄k ḡk = −gk + MkT ḡk+1
+
+
+
+
+0 0
+0
+rk
+ vk+1 
+= −gk − Sk 0 −ATk  Γ̄−1
+k+1
+−γk+1
+0 0
+0
+
+ 
+  −1
+
+ 
+
+Hk+1
+0
+0
+0 0
+0
+I BkT −BkT Vk+1
+rk
+0 0
+0
+−1
+ I BkT −BkT Vk+1   vk+1 
+I + 0
+Bk Hk+1
+0
+= −gk − Sk 0 −ATk  0 0
+−1
+0 I −Vk−1
+−γk+1
+0 0
+0
+I BkT −BkT Vk+1
+0
+0
+−Vk+1 Bk Hk+1
+
+
+
+
+
+ 
+
+0
+0
+0
+I BkT −BkT Vk+1
+0
+0
+0
+rk
+−1
+−1  
+T
+T
+T
+
+
+
+
+I BkT −BkT Vk+1   vk+1 
+0 −Ak Ak Vk+1 + Sk Hk+1 0 Ak Vk+1 Bk Hk+1
+= −gk −
+−γk+1
+0
+0
+0
+I BkT −BkT Vk+1
+0
+0
+0
+
+ 
+
+
+T
+T
+0
+0
+0
+0
+rk + Bk vk+1 + Bk Vk+1 γk+1
+−1
+−1  
+rk + BkT vk+1 + BkT Vk+1 γk+1 
+0 ATk Vk+1 Bk Hk+1
+= −gk − −ATk vk+1 − ATk Vk+1 γk+1  + Sk Hk+1
+0
+rk + BkT vk+1 + BkT Vk+1 γk+1
+0
+0
+0
+and we get:
+−1
+vk = qk + ATk (vk+1 + Vk+1 γk+1 ) − (Sk + ATk Vk+1 Bk )Hk+1
+(rk + BkT vk+1 + BkT Vk+1 γk+1 )
+
+= qk + ATk (vk+1 + Vk+1 γk+1 ) + KkT (rk + BkT vk+1 + BkT Vk+1 γk+1 )
+= qk + KkT rk + (Ak + Bk Kk )T (vk+1 + Vk+1 γk+1 )
+
+(22)
+
+Hence, the property is also true for k.
+Forward pass:
+• k = 1:
+
+s1 = ḡ1
+implies that:
+
+4
+
+(23)
+
+
+
+
+
+
+u0
+−r0
+x1  = Γ̄−1
+−v1 
+1
+λ1
+γ1
+
+  −1
+ 
+
+
+H0
+0
+0
+I B0T −B0T V1
+0 0
+0
+−r0
+ I B0T −B0T V1  −v1 
+I + 0
+= 0 0
+B0 H0−1
+0
+−1
+0 I −V1
+γ1
+I B0T −B0T V1
+0
+0
+−V1 B0 H1
+
+  −1
+
+
+T
+H0
+0
+0
+r0 + B0 (v1 + V1 γ1 )
+0
+− 0
+ r0 + B0T (v1 + V1 γ1 )
+γ1
+=
+B0 H0−1
+0
+−v1 − V1 γ1
+r0 + B0T (v1 + V1 γ1 )
+0
+0
+−V1 B0 H1−1
+
+
+k0
+
+B0 k0 + γ1
+=
+−V1 B0 k0 − V1 γ1 − v1
+
+(24)
+
+Hence, λ1 = −V1 x1 − v1
+• k ≥ 1:
+Then:
+s̄k = ḡk − Γ̄−1
+k Mk−1 sk−1
+implies that:
+
+
+
+
+uk
+−rk
+xk+1  = Γ̄−1 (−vk+1  − Mk sk )
+k+1
+λk+1
+γk+1
+
+  −1
+
+Hk+1
+0
+0
+I
+0 0
+0
+−1
+ I
+I + 0
+Bk Hk+1
+0
+= 0 0
+−1
+0 I −Vk+1
+I
+0
+0
+−Vk+1 Bk Hk+1
+
+
+kk + Kk xk
+
+(Ak + Bk Kk )xk + Bk kk + γk+1
+=
+Vk+1 ((Ak + Bk Kk )xk + Bk kk + γk+1 ) + vk+1
+
+(25)
+
+BkT
+BkT
+BkT
+
+ 
+
+−BkT Vk+1
+−rk − SkT xk
+−BkT Vk+1   −vk+1 
+γk+1 + Ak xk
+−BkT Vk+1
+(26)
+
+and we get:
+λk+1 = Vk+1 xk+1 + vk+1
+
+5
+
+(27)
+
+
