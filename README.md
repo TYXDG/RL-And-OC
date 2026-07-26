@@ -39,3 +39,5 @@ for f in *.pdf; do pdftotext "$f" "source/${f%.pdf}.txt"; done
 ```
 
 各子目录下的 `README.md` 有更细的说明。
+
+如有漏洞或错误，欢迎留言指出。

@@ -72,6 +72,8 @@ r_k \in \arg\min_r \sum_{s=1}^q \big\| u_k^s - \mu_k(x_k^s,r) \big\|^2. \qquad \
 
 本章主体为**值空间**，策略空间作为 §2.1.5 及第 3–4 章接口贯穿全文。
 
+> **跨章索引**：值/策略范式、VI/PI 算法模板、精确与参数化表示，及全书章节结构，见 [`00-algorithm-taxonomy.md`](00-algorithm-taxonomy.md)。本章定名两大 paradigm；精确 VI/PI 见 Ch.4 §4.4–4.5——建议在 §4.5 读毕后对照该文 §4–6。
+
 ### Model-based 与 Model-free（本书界定）
 
 本书以**期望是否用 Monte Carlo 采样**区分，而非单纯「有没有 $f,g$ 的公式」：

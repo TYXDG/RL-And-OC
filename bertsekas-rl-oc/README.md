@@ -8,13 +8,14 @@ Dimitri P. Bertsekas, *Reinforcement Learning and Optimal Control*（Athena Scie
 |------|------|
 | [`Reinforcement learning and optimal control.pdf`](Reinforcement%20learning%20and%20optimal%20control.pdf) | 原 PDF |
 | [`source/`](source/) | 抽取正文：`full.txt`、`ch01_clean.txt` … `ch05_clean.txt`，长章见 [`source/parts/`](source/parts/) |
-| [`study-notes/`](study-notes/) | **分节读书笔记**（唯一笔记目录） |
+| [`study-notes/`](study-notes/) | **分节读书笔记**（唯一笔记目录）；跨章索引见 [`study-notes/00-algorithm-taxonomy.md`](study-notes/00-algorithm-taxonomy.md) |
 | [`scripts/`](scripts/) | 抽章节、拆 part、修公式等 |
 
 ## 笔记进度
 
 | 章节 | 状态 | 说明 |
 |------|------|------|
+| **跨章** [`00-algorithm-taxonomy.md`](study-notes/00-algorithm-taxonomy.md) | 已写 | VI/PI、值/策略空间、算法归属、写作思路与章节安排 |
 | 第 1 章 Exact DP | 进行中 | §1.1–§1.2 已写细；§1.3–§1.4 有骨架 |
 | 第 2 章 值空间近似 | 较完整 | §2.0–§2.5 已扩充（前瞻、CEC、rollout、MPC 等） |
 | 第 3 章 参数化近似 | 较完整 | §3.1.3–§3.4 已扩充（增量法、NN、FVI、拟合 Q） |

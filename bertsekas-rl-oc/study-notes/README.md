@@ -4,6 +4,14 @@
 
 书是 Bertsekas 的 *Reinforcement Learning and Optimal Control*（2019 draft）。行内公式用 `$...$`，块级大公式用 ` ```math ` 代码块；最优星号写成 `J_k^{*}`，别用裸 `^*`。
 
+## 跨章索引
+
+| 文件 | 内容 |
+|------|------|
+| [`00-algorithm-taxonomy.md`](00-algorithm-taxonomy.md) | **全书索引**：VI/PI、值/策略空间、算法归属、作者写作思路与章节安排 |
+
+建议在 Ch.4 §4.11 或 Ch.5 §5.7 之后系统阅读；Ch.2 章首可先行概览前半。
+
 ## 各章文件
 
 | 文件 | 对应章节 |

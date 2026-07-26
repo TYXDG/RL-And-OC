@@ -424,6 +424,21 @@ r_{k+1}\in\arg\min_r\big[\xi_1(r-2\alpha r_k)^2+\xi_2(2r-2\alpha r_k)^2\big]
 
 ---
 
+### VI 与 PI：无函数逼近误差下的两种算法模板
+
+有限状态、tabular 表示下，Bellman 最优控制有两条经典精确迭代路线（详见 [`00-algorithm-taxonomy.md`](00-algorithm-taxonomy.md) §4–6）：
+
+| | **值迭代（VI）** | **策略迭代（PI）** |
+|--|------------------|-------------------|
+| 每轮核心 | $J_{k+1}=TJ_k$ | 评估 $J_{\mu_k}=T_{\mu_k}J_{\mu_k}$ → 改进 $\mu_{k+1}$ |
+| 策略何时出现 | 收敛后贪心，或每轮隐式 | 每轮显式更新 $\mu_k$ |
+| 典型代价 | 每轮 $O(n\|U\|)$，轮数可多 | 评估 $O(n^3)$ 级，轮数常少 |
+| 近似版 | Fitted VI（§4.4） | 近似 PI / Actor–Critic（§4.6–4.7） |
+
+二者同属**值空间** paradigm；差别在 **VI 型 vs PI 型**算法模板。Fitted VI 在近似 regime 下等价于 $m_k=1$ 的乐观 PI + 回归（§4.5.2）。
+
+---
+
 ## §4.5 Policy Iteration
 
 ### 算法框架（Fig 4.5.1）
@@ -1147,15 +1162,17 @@ $u^s$ 来源（§4.11.2）：
 
 ## 本章小结
 
-| 需求 / 场景 | 推荐节 / 方法 |
-|-------------|---------------|
-| 理论底座 | §4.1–4.3 + §4.13 |
-| 小 MDP，知模型 | 精确 VI / PI |
-| 大状态，知模型 | §4.4 FVI、近似 PI、§4.10 LP + Ch.5 |
-| 仅仿真器 | §4.8 Q-learning、§4.9 TD、§4.7 actor–critic |
-| 有次优界需求 | §4.6（Prop 4.6.1–4.6.5；$\alpha\to 1$ 时界变松） |
-| 有启发 $\mu$ | Rollout（Prop 4.6.2） |
-| 直接优化策略 | §4.11 policy gradient |
+完整 **paradigm / template 分类** 与全书章节组织见 [`00-algorithm-taxonomy.md`](00-algorithm-taxonomy.md) §5、§8。
+
+| 需求 / 场景 | Paradigm | Template | 推荐节 / 方法 |
+|-------------|----------|----------|---------------|
+| 理论底座 | — | — | §4.1–4.3 + §4.13 |
+| 小 MDP，知模型 | 值空间 | VI 或 PI | 精确 VI / PI |
+| 大状态，知模型 | 值空间 | VI 或 PI | §4.4 FVI、近似 PI、§4.10 LP + Ch.5 |
+| 仅仿真器 | 值空间 | VI 或 PI | §4.8 Q-learning、§4.9 TD、§4.7 actor–critic |
+| 有次优界需求 | 值空间 | 前瞻 / PI | §4.6（Prop 4.6.1–4.6.5；$\alpha\to 1$ 时界变松） |
+| 有启发 $\mu$ | 值空间 | PI（单轮） | Rollout（Prop 4.6.2） |
+| 直接优化策略 | 策略空间 | — | §4.11 policy gradient |
 
 ---
 
