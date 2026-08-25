@@ -7,8 +7,9 @@
 | [`bertsekas-rl-oc/`](bertsekas-rl-oc/) | Dimitri P. Bertsekas, *Reinforcement Learning and Optimal Control*（2019 draft） | [`study-notes/`](bertsekas-rl-oc/study-notes/) |
 | [`zero-order-robotics/`](zero-order-robotics/) | Jordana 等, *Zero-Order Optimization Techniques for Robotics*（arXiv:2506.22087v2, 2025） | [`study-notes/`](zero-order-robotics/study-notes/) |
 | [`sqp-oc/`](sqp-oc/) | Jordana 等 SQP/MPC 系列 + Chakravorty, *SQP Perspective on Optimal Control*（2023–2025） | [`study-notes/control-optimization-sqp-synthesis.md`](sqp-oc/study-notes/control-optimization-sqp-synthesis.md) |
+| [`clean-rl/`](clean-rl/) | 深度 RL 算法笔记（对照单文件实现阅读） | [`ppo_notes.md`](clean-rl/ppo_notes.md)、[`sac_notes.md`](clean-rl/sac_notes.md) |
 
-**对照阅读**：Bertsekas 提供 Bellman / MPC / 策略梯度理论骨架；Zero-Order 用随机搜索统一 TO（MPPI、CMA）与 RL；SQP 组用数值优化语言统一 iLQR、DDP、多重打靶 NMPC 与结构利用型 QP 求解器。
+**对照阅读**：Bertsekas 提供 Bellman / MPC / 策略梯度理论骨架；Zero-Order 用随机搜索统一 TO（MPPI、CMA）与 RL；SQP 组用数值优化语言统一 iLQR、DDP、多重打靶 NMPC 与结构利用型 QP 求解器；`clean-rl/` 用 PPO、SAC 把策略梯度与 off-policy Actor-Critic 落到可对照的推导上。
 
 版权在原书 / 原论文，仅供个人学习，请勿商业再分发。
 
