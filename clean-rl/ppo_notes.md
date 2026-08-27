@@ -130,24 +130,97 @@ $$
 
 **Step 7：用时序因果性化简**
 
-$t$ 时刻的动作 $a_t$ 不会影响 $t$ 时刻之前的奖励，因此：
+把 $R(\tau)=\sum_{k=0}^{T}\gamma^k r_k$ 代入，得到双求和：
 
 $$
-\nabla_\theta J(\theta) = \mathbb{E}\left[ \sum_{t=0}^{T} \nabla_\theta \log \pi_\theta(a_t | s_t) \cdot \sum_{t'=t}^{T} \gamma^{t'-t} r_{t'} \right]
+\nabla_\theta J(\theta)
+=\mathbb{E}\left[\sum_{t=0}^{T}\nabla_\theta\log\pi_\theta(a_t|s_t)\sum_{k=0}^{T}\gamma^k r_k\right]
+=\mathbb{E}\left[\sum_{t=0}^{T}\sum_{k=0}^{T}\nabla_\theta\log\pi_\theta(a_t|s_t)\cdot\gamma^k r_k\right]
 $$
+
+固定 $s_t$，score 对动作求平均必为 0（概率和为 1）：
+
+$$
+\mathbb{E}\big[\nabla_\theta\log\pi_\theta(a_t|s_t)\mid s_t\big]
+=\int\pi_\theta(a|s_t)\,\nabla_\theta\log\pi_\theta(a|s_t)\,da
+=\nabla_\theta\int\pi_\theta(a|s_t)\,da
+=\nabla_\theta 1=0
+$$
+
+对每个 $(t,k)$ 分两种：
+
+- **$k<t$**：到达 $s_t$ 时 $r_k$ 已确定，故 $\mathbb{E}[\nabla\log\pi\cdot r_k\mid s_t]=r_k\cdot\mathbb{E}[\nabla\log\pi\mid s_t]=r_k\cdot 0=0$，再取外层期望仍为 0。
+- **$k\ge t$**：$r_k$ 还取决于 $a_t$，不能提出去，这才是真正的信号。
+
+因此内层只留下 $k\ge t$。令 $G_t=\sum_{t'=t}^{T}\gamma^{t'-t}r_{t'}$（严格说前面还有 $\gamma^t$，实现里常省掉）：
+
+$$
+\nabla_\theta J(\theta)=\mathbb{E}\left[\sum_{t=0}^{T}\nabla_\theta\log\pi_\theta(a_t|s_t)\cdot G_t\right]
+$$
+
+过去奖励对所有 $a_t$ 都一样，只加噪声；砍掉后期望不变、方差变小。这和 Step 6 的 baseline 是同一条恒等式。
 
 **Step 8：用 Advantage 替换回报**
 
-取 baseline $b(s_t) = V(s_t)$（状态价值函数），则：
+$Q^\pi(s_t,a_t)=\mathbb{E}[G_t\mid s_t,a_t]$。单条轨迹上 $G_t\neq Q$，但 $\nabla_\theta\log\pi_\theta(a_t|s_t)$ 只依赖 $(s_t,a_t)$，给定后可提出去：
 
 $$
-Q(s_t, a_t) - V(s_t) = A(s_t, a_t)
+\begin{aligned}
+\mathbb{E}\big[\nabla_\theta\log\pi\cdot G_t\big]
+&=\mathbb{E}\Big[\mathbb{E}\big[\nabla_\theta\log\pi\cdot G_t\mid s_t,a_t\big]\Big]
+\quad\text{（全期望公式）}\\
+&=\mathbb{E}\Big[\nabla_\theta\log\pi\cdot\mathbb{E}[G_t\mid s_t,a_t]\Big]\\
+&=\mathbb{E}\big[\nabla_\theta\log\pi\cdot Q^\pi(s_t,a_t)\big]
+\end{aligned}
 $$
 
-这就是 **Advantage（优势函数）**。最终得到：
+Step 6 里任意只依赖 $s_t$ 的 $b(s_t)$ 都不改变期望。取 $b(s_t)=V^\pi(s_t)$，是因为 $V^\pi(s)=\mathbb{E}[Q^\pi(s,a)\mid s]=\mathbb{E}[G_t\mid s]$，正好是该状态下回报的均值，于是
 
 $$
-\boxed{\nabla_\theta J(\theta) = \mathbb{E}\left[ \nabla_\theta \log \pi_\theta(a_t | s_t) \cdot \hat{A}_t \right]}
+A^\pi(s_t,a_t)=Q^\pi(s_t,a_t)-V^\pi(s_t)
+$$
+
+是残差（这个动作相对「该状态的平均水平」好多少），$\mathbb{E}[A\mid s]=0$，方差比直接用 $G_t$ 或 $Q$ 小。
+
+沿一条轨迹的求和只是把每个时刻的贡献加起来。取 $f(s,a)=\nabla_\theta\log\pi_\theta(a|s)\,A^\pi(s,a)$：
+
+$$
+\nabla_\theta J(\theta)
+=\mathbb{E}_\tau\left[\sum_{t=0}^{T}f(s_t,a_t)\right]
+=\sum_{t=0}^{T}\mathbb{E}\big[f(s_t,a_t)\big]
+$$
+
+定义占用测度（各时刻访问频率的混合）
+
+$$
+d^\pi(s,a)=\frac{1}{T+1}\sum_{t=0}^{T}P(s_t=s,\,a_t=a)
+$$
+
+则
+
+$$
+\sum_{t=0}^{T}\mathbb{E}\big[f(s_t,a_t)\big]
+=(T+1)\,\mathbb{E}_{(s,a)\sim d^\pi}[f(s,a)]
+$$
+
+常数 $T+1$ 可吸收进学习率，故
+
+$$
+\nabla_\theta J(\theta)
+\propto
+\mathbb{E}_{(s,a)\sim d^\pi}\big[\nabla_\theta\log\pi_\theta(a|s)\,A^\pi(s,a)\big]
+$$
+
+实现上把轨迹所有时间步放进同一 batch 再平均，即对 $d^\pi$ 做蒙特卡洛（$N=$ 轨迹数 $\times$ 步数）：
+
+$$
+\frac{1}{N}\sum_{i=1}^{N}\nabla_\theta\log\pi_\theta(a^{(i)}|s^{(i)})\,\hat A^{(i)}
+$$
+
+用 $\hat A_t$ 代替 $A^\pi$。框里的 $\mathbb{E}$ 指这个平均（下标 $t$ 表示某个时间步上的一对 $(s,a)$，不再对 $t$ 显式求和）：
+
+$$
+\boxed{\nabla_\theta J(\theta)=\mathbb{E}\left[\nabla_\theta\log\pi_\theta(a_t|s_t)\cdot\hat A_t\right]}
 $$
 
 **推导链总结**：
@@ -160,8 +233,10 @@ J(θ) = E[R(τ)]
 ∇J = E[Σ ∇log π(a|s) · R(τ)]
    ↓ 引入 baseline（减方差，不改变期望）
 ∇J = E[Σ ∇log π(a|s) · (R(τ) - b(s))]
-   ↓ 时序因果性 + 用 V(s) 做 baseline
-∇J = E[∇log π(a|s) · A(s,a)]
+   ↓ 时序因果性：过去奖励与 ∇logπ(a_t|s_t) 期望为 0
+∇J = E[Σ ∇log π(a_t|s_t) · G_t]
+   ↓ E[G_t|s,a]=Q；b=V（状态均值）得 A=Q-V
+∇J = E_τ[Σ ∇log π · A] = E_{s,a}[∇log π(a|s) · A(s,a)]
 ```
 
 ---
