@@ -182,7 +182,7 @@ $$
 
 是残差（这个动作相对「该状态的平均水平」好多少），$\mathbb{E}[A\mid s]=0$，方差比直接用 $G_t$ 或 $Q$ 小。
 
-沿一条轨迹的求和只是把每个时刻的贡献加起来。取 $f(s,a)=\nabla_\theta\log\pi_\theta(a|s)\,A^\pi(s,a)$：
+取 $f(s,a)=\nabla_\theta\log\pi_\theta(a|s)\,A^\pi(s,a)$，真正的梯度是「一条轨迹上对 $t$ **求和**，再对轨迹平均」：
 
 $$
 \nabla_\theta J(\theta)
@@ -190,34 +190,37 @@ $$
 =\sum_{t=0}^{T}\mathbb{E}\big[f(s_t,a_t)\big]
 $$
 
-定义占用测度（各时刻访问频率的混合）
+占用测度 $d^\pi$ 是各时刻分布的等权平均（等价于先均匀抽 $t\in\{0,\ldots,T\}$，再抽 $(s_t,a_t)$）：
 
 $$
 d^\pi(s,a)=\frac{1}{T+1}\sum_{t=0}^{T}P(s_t=s,\,a_t=a)
 $$
 
-则
+代入期望定义：
 
 $$
-\sum_{t=0}^{T}\mathbb{E}\big[f(s_t,a_t)\big]
-=(T+1)\,\mathbb{E}_{(s,a)\sim d^\pi}[f(s,a)]
+\begin{aligned}
+\mathbb{E}_{(s,a)\sim d^\pi}[f]
+&=\sum_{s,a}d^\pi(s,a)\,f(s,a)\\
+&=\sum_{s,a}\left(\frac{1}{T+1}\sum_{t=0}^{T}P(s_t=s,a_t=a)\right)f(s,a)\\
+&=\frac{1}{T+1}\sum_{t=0}^{T}\underbrace{\sum_{s,a}P(s_t=s,a_t=a)\,f(s,a)}_{=\mathbb{E}[f(s_t,a_t)]}\\
+&=\frac{1}{T+1}\sum_{t=0}^{T}\mathbb{E}[f(s_t,a_t)]
+\end{aligned}
 $$
 
-常数 $T+1$ 可吸收进学习率，故
+故 $\sum_{t=0}^{T}\mathbb{E}[f(s_t,a_t)]=(T+1)\,\mathbb{E}_{d^\pi}[f]$。$\theta\leftarrow\theta+\alpha g$ 里 $T+1$ 可并入 $\alpha$，故
 
 $$
-\nabla_\theta J(\theta)
-\propto
-\mathbb{E}_{(s,a)\sim d^\pi}\big[\nabla_\theta\log\pi_\theta(a|s)\,A^\pi(s,a)\big]
+\nabla_\theta J(\theta)\propto\mathbb{E}_{(s,a)\sim d^\pi}\big[\nabla_\theta\log\pi_\theta(a|s)\,A^\pi(s,a)\big]
 $$
 
-实现上把轨迹所有时间步放进同一 batch 再平均，即对 $d^\pi$ 做蒙特卡洛（$N=$ 轨迹数 $\times$ 步数）：
+代码把所有时间步放进同一 batch 做 `mean`，就是对 $d^\pi$ 的蒙特卡洛（$N=$ 轨迹数 $\times$ 步数）：
 
 $$
 \frac{1}{N}\sum_{i=1}^{N}\nabla_\theta\log\pi_\theta(a^{(i)}|s^{(i)})\,\hat A^{(i)}
 $$
 
-用 $\hat A_t$ 代替 $A^\pi$。框里的 $\mathbb{E}$ 指这个平均（下标 $t$ 表示某个时间步上的一对 $(s,a)$，不再对 $t$ 显式求和）：
+框里的 $\mathbb{E}$ 指这个平均，不是再对 $t$ 求和；下标 $t$ 只表示 buffer 里的某一对 $(s,a)$：
 
 $$
 \boxed{\nabla_\theta J(\theta)=\mathbb{E}\left[\nabla_\theta\log\pi_\theta(a_t|s_t)\cdot\hat A_t\right]}
