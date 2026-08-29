@@ -6,7 +6,6 @@
 > 3. Abhijeet & Chakravorty — *A Sequential Quadratic Programming Perspective on Optimal Control* (arXiv:2510.03475, 2025)  
 > 4. Jordana 等 — *Supplementary Material*（KKT → Thomas → Riccati 证明）  
 >
-> **文本来源**：[`../source/`](../source/)  
 > **仓库对照**：[`bertsekas-rl-oc`](../../bertsekas-rl-oc/study-notes/) · [`zero-order-robotics`](../../zero-order-robotics/study-notes/)
 
 ---

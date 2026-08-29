@@ -1,7 +1,6 @@
 # Zero-Order Optimization Techniques for Robotics — 分节读书笔记
 
-> **文献**：Armand Jordana, Jianghan Zhang, Joseph Amigo, Ludovic Righetti, *An Introduction to Zero-Order Optimization Techniques for Robotics*（arXiv:2506.22087v2, Oct 2025）。  
-> **文本来源**：[`../source/full.txt`](../source/full.txt)（PDF 见 [`..`](../)）。  
+> **文献**：Armand Jordana, Jianghan Zhang, Joseph Amigo, Ludovic Righetti, *An Introduction to Zero-Order Optimization Techniques for Robotics*（[arXiv:2506.22087](https://arxiv.org/abs/2506.22087) v2, Oct 2025）。  
 > **定位**：以**随机搜索**统一理解机器人里常用的零阶（无梯度）优化——轨迹优化（TO）与策略优化（RL）共用同一套 $\min_x f(x)$ 骨架。
 
 ---

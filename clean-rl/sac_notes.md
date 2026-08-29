@@ -1,5 +1,7 @@
 # SAC（Soft Actor-Critic）算法笔记
 
+> 高维机器人、低 UTD 与 critic 稳定化见 [`flashsac_notes.md`](flashsac_notes.md)（FlashSAC，arXiv:2604.04539）。
+
 ---
 
 ## 一、算法定位
@@ -20,29 +22,41 @@ SAC 是 Haarnoja 等人于 2018 年提出的 off-policy Actor-Critic，在**最�
 
 ## 二、前置基础：最大熵强化学习
 
-标准 RL 最大化折扣回报：
+### 熵正则与最大熵目标
+
+标准 RL 最大化折扣期望回报：
 
 $$
 J(\pi) = \mathbb{E}_{\tau \sim \pi}\left[\sum_{t=0}^{\infty} \gamma^t r(s_t, a_t)\right]
 $$
 
-最大熵 RL 在每一步额外奖励策略的熵：
+最大熵强化学习在逐步代价中加入条件策略的 Shannon 熵：
 
 $$
 J(\pi) = \mathbb{E}_{\tau \sim \pi}\left[\sum_{t=0}^{\infty} \gamma^t \Big(r(s_t, a_t) + \alpha\,\mathcal{H}\big(\pi(\cdot\mid s_t)\big)\Big)\right]
 $$
 
-其中温度 $\alpha>0$，熵定义为
+其中 $\alpha>0$ 为温度。熵定义为
 
 $$
-\mathcal{H}\big(\pi(\cdot\mid s)\big) = -\mathbb{E}_{a\sim\pi(\cdot\mid s)}\big[\log\pi(a\mid s)\big]
+\mathcal{H}\big(\pi(\cdot\mid s)\big)
+= -\mathbb{E}_{a\sim\pi(\cdot\mid s)}\big[\log\pi(a\mid s)\big]
+= -\int \pi(a\mid s)\log\pi(a\mid s)\,da
 $$
 
-**直观理解**：
+$\mathcal{H}(\pi(\cdot\mid s))$ 刻画 $\pi(\cdot\mid s)$ 的不确定性：在有限支撑上于均匀分布处取最大，于 Dirac 测度处趋于 $0$。由线性性质，$\alpha\mathcal{H}(\pi(\cdot\mid s))=\mathbb{E}_{a\sim\pi}[-\alpha\log\pi(a\mid s)]$，故目标函数与 soft 备份中的 $-\alpha\log\pi$ 为同一项。$\alpha$ 将熵与奖励置于同一量纲：$\alpha$ 增大则最优策略更接近均匀；$\alpha\to 0$ 时目标退化为不含熵的 $J(\pi)$。
 
-- $\alpha$ 大：更愿意保持随机，探索多、不易锁死在单一动作
-- $\alpha$ 小：更接近普通「只追回报」的 RL
-- 同一状态可以保留**多峰**最优（确定性策略只能输出一个点）
+加入 $\mathcal{H}$ 改变的是最优策略的定义，而非仅在执行时附加探索噪声。给定 $Q$，逐步最大化上述 $J$ 得到 Boltzmann 策略 $\pi^*(a\mid s)\propto\exp(Q(s,a)/\alpha)$（见本节后文）；$\alpha$ 同时进入 soft Bellman 方程。其作用可陈述如下。
+
+1. **探索由目标规定。** 确定性 Actor（DDPG / TD3）依赖与 $Q$ 解耦的外加扰动。最大熵目标中 $\pi$ 为条件分布，$\mathcal{H}$ 出现在 $J(\pi)$ 中，故在期望回报相近时提高熵即提高目标。PPO 将熵作为 on-policy 损失中的附加正则；SAC 将同一结构写入价值备份。
+
+2. **等回报下的随机性偏好。** 若若干策略的期望回报相同，最大熵解选取其中熵较大者。$\pi^*$ 按 $Q$ 分配质量：$Q$ 较高的动作具有较大概率，$Q$ 接近的动作仍具有正质量，从而对奖励与转移核的小扰动较为稳健。
+
+3. **最优动作非唯一。** $Q(s,\cdot)$ 存在多个近最优点时，确定性策略只能取其中之一；有限 $\alpha$ 下 $\pi^*$ 可保持多峰。$Q$ 随后更新时，概率质量可在峰之间重新分配，而无须先坍缩为单点再迁移。
+
+4. **与 Actor–Critic 更新一致。** Soft 价值满足 $V^\pi(s)=\mathbb{E}_{a\sim\pi}[Q^\pi(s,a)-\alpha\log\pi(a\mid s)]$。Actor 最小化 $\mathbb{E}[\alpha\log\pi-Q]$ 等价于信息投影 $\mathrm{KL}\big(\pi(\cdot\mid s)\big\| e^{Q/\alpha}/Z(s)\big)$。将平均熵约束为 $\mathbb{E}[\mathcal{H}(\pi)]\ge\bar{\mathcal{H}}$ 时，$\alpha$ 为对偶变量（第七节）。
+
+**例。** 单状态、动作集 $\{L,R\}$。若 $r(L)=r(R)$，不含熵的目标对一切 $\pi$ 无差别，一阶方法常收敛到单纯形顶点；最大熵问题的解为均匀分布。若 $r(L)>r(R)$，则 $\pi^*(L)>\pi^*(R)>0$，而非 $\pi^*(L)=1$。
 
 ### 最大熵目标下的软价值：逐步推导
 

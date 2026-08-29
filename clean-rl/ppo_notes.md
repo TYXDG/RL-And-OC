@@ -174,13 +174,15 @@ $$
 \end{aligned}
 $$
 
-Step 6 里任意只依赖 $s_t$ 的 $b(s_t)$ 都不改变期望。取 $b(s_t)=V^\pi(s_t)$，是因为 $V^\pi(s)=\mathbb{E}[Q^\pi(s,a)\mid s]=\mathbb{E}[G_t\mid s]$，正好是该状态下回报的均值，于是
+Step 6 里任意只依赖 $s_t$ 的 $b(s_t)$ 都不改变期望。取 $b=V^\pi$，因为 $V^\pi(s)=\mathbb{E}[Q^\pi(s,A)\mid s]$（$A\sim\pi(\cdot\mid s)$），于是
 
 $$
-A^\pi(s_t,a_t)=Q^\pi(s_t,a_t)-V^\pi(s_t)
+A^\pi(s,a)=Q^\pi(s,a)-V^\pi(s)
+\quad\Longrightarrow\quad
+\mathbb{E}[A^\pi\mid s]=\mathbb{E}[Q^\pi\mid s]-V^\pi(s)=0.
 $$
 
-是残差（这个动作相对「该状态的平均水平」好多少），$\mathbb{E}[A\mid s]=0$，方差比直接用 $G_t$ 或 $Q$ 小。
+残差相对该状态平均水平，方差比 $G_t$ 或 $Q$ 小。
 
 取 $f(s,a)=\nabla_\theta\log\pi_\theta(a|s)\,A^\pi(s,a)$，真正的梯度是「一条轨迹上对 $t$ **求和**，再对轨迹平均」：
 
@@ -436,13 +438,14 @@ $$
 \boxed{A_t^{\mathrm{GAE}} = \delta_t + (\gamma\lambda) \cdot A_{t+1}^{\mathrm{GAE}}}
 $$
 
-轨迹末端取 $A_T = 0$（或最后一步只保留 $\delta_{T-1}$），因此实现上必须**从后往前**扫描。对应的回报目标用于训练 Critic：
+轨迹末端取 $A_T = 0$（或最后一步只保留 $\delta_{T-1}$），因此实现上必须**从后往前**扫描。因 $A_t \approx G_t - V(s_t)$，加回价值得到 GAE 配套的回报目标：
 
 $$
 R_t = A_t + V(s_t)
 $$
 
-这是因为 $A_t \approx G_t - V(s_t)$，故 $R_t$ 即 GAE 对应的回报估计。
+- $\hat{A}_t$：更新 Actor（$\theta$），进 $L^{\mathrm{CLIP}}$ / 加权策略梯度
+- $R_t$：更新 Critic（$\phi$），回归拟合 $V_\phi(s_t)\approx R_t$
 
 ### 7.5 $\lambda$ 的作用：偏差–方差权衡
 
