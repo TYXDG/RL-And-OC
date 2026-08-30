@@ -60,23 +60,39 @@ $\mathcal{H}(\pi(\cdot\mid s))$ 刻画 $\pi(\cdot\mid s)$ 的不确定性：在�
 
 ### 最大熵目标下的软价值：逐步推导
 
-**Step 1：按第一步动作拆开目标**
+**Step 1：$V^\pi$ 的一步展开**
 
-把轨迹期望写成「当前一步 + 折扣后的续值」：
+从状态 $s$ 出发的最大熵回报定义为
 
 $$
-J(\pi) = \mathbb{E}_{s_0,a_0}\Big[r(s_0,a_0) + \alpha\mathcal{H}(\pi(\cdot\mid s_0)) + \gamma\, J_{s_1}(\pi)\Big]
+V^\pi(s)
+= \mathbb{E}\Big[\sum_{t\ge 0}\gamma^t\big(r_t + \alpha\,\mathcal{H}(\pi(\cdot\mid s_t))\big)\Bigm|s_0=s\Big]
 $$
 
-对任意状态 $s$ 定义 soft 状态价值 $V^\pi(s)$ 为从该状态起的最大熵目标。则 soft 动作价值满足备份：
+它与 $J(\pi)$ 是同一条回报，差别只在 $J(\pi)=\mathbb{E}_{s_0\sim\rho_0}[V^\pi(s_0)]$。按 $a\sim\pi(\cdot\mid s)$、$s'\sim p(\cdot\mid s,a)$ 拆开第一步：
+
+$$
+V^\pi(s)
+= \mathbb{E}_{a,s'}\Big[r(s,a) + \alpha\,\mathcal{H}\big(\pi(\cdot\mid s)\big) + \gamma V^\pi(s')\Big]
+$$
+
+当前步熵只依赖 $\pi(\cdot\mid s)$，与 $a,s'$ 无关，故
+
+$$
+V^\pi(s)
+= \mathbb{E}_{a\sim\pi(\cdot\mid s)}\Big[r(s,a) + \gamma\,\mathbb{E}_{s'}[V^\pi(s')]\Big]
++ \alpha\,\mathcal{H}\big(\pi(\cdot\mid s)\big)
+$$
+
+**Step 2：动作价值 $Q^\pi$**
+
+定义
 
 $$
 Q^\pi(s,a) = r(s,a) + \gamma\,\mathbb{E}_{s'\sim p(\cdot\mid s,a)}\big[V^\pi(s')\big]
 $$
 
-**Step 2：用 $Q$ 表达 $V$**
-
-从 $s$ 出发，先按 $\pi$ 选 $a$，回报是 $Q^\pi(s,a)$，同时还要加上当前步的熵奖励 $\alpha\mathcal{H}$。熵奖励等价于在期望里减去 $\alpha\log\pi$：
+则
 
 $$
 \begin{aligned}
@@ -85,8 +101,6 @@ V^\pi(s)
 &= \mathbb{E}_{a\sim\pi(\cdot\mid s)}\big[Q^\pi(s,a) - \alpha\log\pi(a\mid s)\big]
 \end{aligned}
 $$
-
-这就是 soft $V$ 的定义：普通期望 $Q$ 再加一项熵。
 
 **Step 3：给定 $Q$，最优策略是 Boltzmann 分布**
 
@@ -97,7 +111,15 @@ $$
 \quad\text{s.t.}\quad \int \pi(a\mid s)\,da = 1
 $$
 
-拉格朗日函数（省略与 $a$ 无关的项）对 $\pi(a)$ 求变分，驻点满足
+把期望写成对 $\pi$ 的泛函，乘子 $\lambda(s)$ 吸收归一化约束：
+
+$$
+\mathcal{L}(\pi,\lambda)
+= \int \pi(a)\bigl(Q(s,a) - \alpha\log\pi(a)\bigr)\,da
++ \lambda(s)\Bigl(1 - \int \pi(a)\,da\Bigr)
+$$
+
+被积函数里与 $\pi$ 相乘的部分是 $Q-\alpha\log\pi-\lambda(s)$；单独的 $\lambda(s)$ 与 $a$ 无关，变分时丢掉。对 $\pi(a)$ 求变分（注意 $\frac{\partial}{\partial\pi}[\pi\log\pi]=\log\pi+1$）得驻点
 
 $$
 Q(s,a) - \alpha\log\pi(a\mid s) - \alpha - \lambda(s) = 0
@@ -136,7 +158,7 @@ $$
 
 **Step 5：消去 $V$，得到 soft Bellman 方程**
 
-把 Step 2 的 $V(s')$ 代入 Step 1 的 $Q$：
+把 $V(s')=\mathbb{E}_{a'}[Q(s',a')-\alpha\log\pi(a'\mid s')]$ 代入 $Q$：
 
 $$
 \boxed{Q^\pi(s,a) = r(s,a) + \gamma\,\mathbb{E}_{s',\,a'\sim\pi(\cdot\mid s')}\big[Q^\pi(s',a') - \alpha\log\pi(a'\mid s')\big]}
@@ -147,11 +169,13 @@ $$
 **推导链总结**：
 
 ```text
-J(π) = E[Σ γ^t (r_t + α H(π(·|s_t)))]
-   ↓ 拆成当前奖励 + 续值
+V^π(s) = E[Σ γ^t (r_t + α H(π(·|s_t))) | s_0 = s]
+   ↓ 拆第一步
+V = E_{a,s'}[r + αH + γ V(s')]
+   ↓ 定义 Q
 Q(s,a) = r + γ E[V(s')]
-   ↓ V = E_a[Q] + αH(π)
-V(s) = E_a[Q(s,a) − α log π(a|s)]
+   ↓ H = −E[log π]
+V(s) = E_a[Q] + αH = E_a[Q − α log π]
    ↓ 对 π 做有约束变分
 π*(a|s) ∝ exp(Q(s,a)/α)
    ↓ 代回 V
@@ -191,32 +215,31 @@ $$
 Q(s,a) = r + \gamma\,\mathbb{E}_{s',a'}\big[Q(s',a') - \alpha\log\pi(a'\mid s')\big]
 $$
 
-用目标网络 $Q_{\bar\theta}$ 提供下一状态的价值，并用**当前策略**采样 $a'\sim\pi_\phi(\cdot\mid s')$（不是行为策略，也不是 $\arg\max$）。再取两个目标 $Q$ 的较小者，减轻过估计。终止时不再备份。于是一步目标为
+右边对 $s',a'$ 的期望用一次采样代替。$a'$ 按方程应对当前 $\pi$ 求期望，故 $a'\sim\pi_\phi(\cdot\mid s')$；$Q(s',\cdot)$ 由目标网络 $Q_{\bar\theta}$ 给出，以免 $y$ 与在线 $Q_\theta$ 同步漂移。与 TD3 相同，维护两套目标网络并取 $\min$，抑制过估计。
+
+转移记为 $(s,a,r,s',d)$。$d\in\{0,1\}$ 为终止指示：该步之后回合结束则 $d=1$，否则 $d=0$。无穷时域下终止态没有后继价值，故 $d=1$ 时 $y=r$；$d=0$ 时按 soft $Q$ 备份。实现上 $d$ 由环境写入经验池（`done` / `terminated`）。若仅因时间上限截断，后继状态仍有定义，应取 $d=0$ 并继续备份，不宜与真正终止混为同一标志。一步目标为
 
 $$
 y = r + \gamma(1-d)\Big(\min_{i=1,2} Q_{\bar\theta_i}(s',a') - \alpha\log\pi_\phi(a'\mid s')\Big)
 $$
 
-其中 $d=1$ 表示终止。
-
-- $\min_i Q$：两个估计里取保守的那个
-- $-\alpha\log\pi$：策略在 $s'$ 上越确定（$\log\pi$ 越大），目标越低，备份本身就在奖励随机性
+$y$ 对 Critic 视为常数。$-\alpha\log\pi_\phi(a'\mid s')$ 使更确定的下一动作对应更低的备份值。
 
 ### 5.2 Critic 损失
 
-两个 soft $Q$ 拟合同一目标：
+维护两个独立参数 $\theta_1,\theta_2$ 的 soft $Q$，对同一 $y$ 做均方回归：
 
 $$
 J_Q(\theta_i) = \mathbb{E}_{(s,a,r,s')\sim\mathcal{D}}\Big[\big(Q_{\theta_i}(s,a) - y\big)^2\Big],\qquad i=1,2
 $$
 
-这是 soft Bellman 残差的均方。目标网络缓慢跟踪：
+两套目标网络各自软更新，
 
 $$
-\bar\theta \leftarrow \tau\theta + (1-\tau)\bar\theta
+\bar\theta_i \leftarrow \tau\theta_i + (1-\tau)\bar\theta_i,\qquad i=1,2
 $$
 
-$\tau$ 很小（如 $0.005$），避免 $y$ 随 $Q$ 剧烈跳动。
+$\tau$ 很小（如 $0.005$）。
 
 > 与 PPO 的对照：PPO 用 GAE 把多步残差合成 $\hat A_t$ 再更新 $V$；SAC 是 off-policy **一步** soft TD，不需要整段轨迹倒序。
 
@@ -237,14 +260,27 @@ $$
 
 ### 6.2 展开 KL，丢掉与 $\phi$ 无关的配分函数
 
+记目标密度 $q_\theta(a\mid s)=\exp(Q_\theta(s,a)/\alpha)/Z_\theta(s)$，其中 $Z_\theta(s)=\int\exp(Q_\theta(s,a)/\alpha)\,da$。正向 KL 的定义为
+
 $$
-\begin{aligned}
-\mathrm{KL}
-&= \mathbb{E}_{a\sim\pi_\phi}\Big[\log\pi_\phi(a\mid s) - \tfrac{1}{\alpha}Q_\theta(s,a) + \log Z_\theta(s)\Big]
-\end{aligned}
+\mathrm{KL}\big(\pi_\phi(\cdot\mid s)\,\big\|\,q_\theta(\cdot\mid s)\big)
+= \mathbb{E}_{a\sim\pi_\phi(\cdot\mid s)}\Big[\log\pi_\phi(a\mid s) - \log q_\theta(a\mid s)\Big]
 $$
 
-$Z_\theta(s)$ 不依赖 $\phi$（把 $Q$ 视为常数），最小化 KL 等价于
+而
+
+$$
+\log q_\theta(a\mid s) = \frac{1}{\alpha}Q_\theta(s,a) - \log Z_\theta(s)
+$$
+
+代入即得
+
+$$
+\mathrm{KL}
+= \mathbb{E}_{a\sim\pi_\phi}\Big[\log\pi_\phi(a\mid s) - \tfrac{1}{\alpha}Q_\theta(s,a) + \log Z_\theta(s)\Big]
+$$
+
+$Z_\theta(s)$ 不依赖 $\phi$（把 $Q$ 视为常数）。对固定 $s$，最小化该 KL 与最小化 $\mathbb{E}_{a\sim\pi_\phi}[\log\pi_\phi-\alpha^{-1}Q_\theta]$ 相同；再乘正常数 $\alpha$，并对 $s\sim\mathcal{D}$ 取期望，等价于
 
 $$
 \boxed{J_\pi(\phi) = \mathbb{E}_{s\sim\mathcal{D},\,a\sim\pi_\phi}\big[\alpha\log\pi_\phi(a\mid s) - Q_\theta(s,a)\big]}
@@ -255,67 +291,80 @@ $$
 - $Q$ 大 → 损失下降 → 提高选该动作的倾向
 - $\log\pi$ 大（太确定）→ 损失上升 → 被 $\alpha$ 压回去
 
+至此目标已定。$\phi$ 同时进入被积函数与采样分布，故 $\nabla_\phi J_\pi$ 须穿过 $a\sim\pi_\phi$；有界动作下 $\log\pi$ 还须按变换后的密度求值。以下分别处理梯度估计、密度变换与更新频率，不另换目标。
+
 ### 6.3 两种求梯度的方式，以及为何用重参数化
 
-目标含 $\mathbb{E}_{a\sim\pi_\phi}[Q(s,a)]$。对数导数技巧给出
+目标含 $\mathbb{E}_{a\sim\pi_\phi}[Q(s,a)]$。$\alpha\log\pi_\phi$ 对 $\phi$ 有解析梯度，困难在 $-Q(s,a(\phi))$。对这一项有两种估计。
+
+**第一种：对数导数（score function / REINFORCE）。** 不把 $a$ 写成 $\phi$ 的函数，只用 $\nabla_\phi\log\pi$：
 
 $$
 \nabla_\phi\,\mathbb{E}_{a\sim\pi_\phi}[Q(s,a)]
 = \mathbb{E}_{a\sim\pi_\phi}\big[Q(s,a)\,\nabla_\phi\log\pi_\phi(a\mid s)\big]
 $$
 
-这是 REINFORCE 型估计，方差大，而且 $a$ 若由不可微的 `sample` 得到，$Q(s,a)$ 对 $\phi$ 没有通过 $a$ 的路径。
+无偏，但方差大；若 $a$ 由不可微的 `sample` 得到，$Q(s,a)$ 对 $\phi$ 没有通过 $a$ 的路径。
 
-重参数化把随机性从参数里抽出来：$\varepsilon\sim\mathcal{N}(0,I)$ 与 $\phi$ 无关，
+**第二种：重参数化（reparameterization）。** 把随机性从参数里抽出：$\varepsilon\sim\mathcal{N}(0,I)$ 与 $\phi$ 无关，
 
 $$
 u = \mu_\phi(s) + \sigma_\phi(s)\odot\varepsilon,\qquad a = f(u)
 $$
 
-于是 $a=f_\phi(\varepsilon;s)$ 对 $\phi$ 可导，
+于是 $a=f_\phi(\varepsilon;s)$ 对 $\phi$ 可导，期望改为对 $\varepsilon$ 计算：
 
 $$
 \nabla_\phi\,\mathbb{E}_{\varepsilon}[Q(s,f_\phi(\varepsilon;s))]
 = \mathbb{E}_{\varepsilon}\big[\nabla_a Q(s,a)\cdot\nabla_\phi f_\phi(\varepsilon;s)\big]
 $$
 
-梯度顺着 $Q$ 对动作的敏感度流回 Actor，方差通常远小于 score function。
+梯度顺着 $Q$ 对动作的敏感度流回 Actor，方差通常远小于第一种。SAC 采用第二种。
 
 ### 6.4 $\tanh$ 有界动作：密度如何变
 
-环境动作常在有界区间。先在无界空间用高斯，再逐维压缩：
+环境动作常在有界盒 $[-A,A]^n$ 内。对角高斯支撑为 $\mathbb{R}^n$，直接采样会越界；采样后再硬截断则分布不再是原高斯，$\log\pi$ 失效。做法是：在无界空间用高斯（便于 $\log\mathcal{N}$ 与重参数化），再以光滑双射压入开区间。
 
 $$
 a = \tanh(u),\qquad u\sim\mathcal{N}(\mu_\phi(s),\sigma_\phi^2(s))
 $$
 
-换元：$a_i=\tanh(u_i)$，雅可比对角且
+$\tanh:\mathbb{R}\to(-1,1)$ 严格递增、可逆（$u=\mathrm{artanh}(a)$），对 $u$ 可导，故梯度仍可按 6.3 第二种回到 $\mu_\phi,\sigma_\phi$。端点概率为零，无需 `clip`。靠近 $\pm 1$ 时导数变小，策略若要顶满行程须将 $|u|$ 推大，这是有界动作的几何。
 
-$$
-\frac{\partial a_i}{\partial u_i} = 1-\tanh^2(u_i) = 1-a_i^2
-$$
-
-密度与对数密度（$u=\mathrm{artanh}(a)$）：
+换元须保持概率质量：$\pi_a(a)\,|\mathrm{d}a|=\pi_u(u)\,|\mathrm{d}u|$，故
 
 $$
 \pi(a\mid s) = \mathcal{N}(u;\mu,\sigma)\,\left\lvert\det\frac{\partial a}{\partial u}\right\rvert^{-1}
 $$
 
+$\tanh$ 在两端压缩体积，$|\det|$ 变小，同一 $u$-质量对应更小的 $a$-体积，边界附近 $\pi(a)$ 升高。逐维变换则雅可比对角，
+
+$$
+\frac{\partial a_i}{\partial u_i} = 1-\tanh^2(u_i) = 1-a_i^2,\qquad
+\Big\lvert\det\frac{\partial a}{\partial u}\Big\rvert=\prod_i(1-\tanh^2(u_i))
+$$
+
+取对数后 $|\det|$ 化为求和（实现中宜用 $u$ 计算，以免 $|a|\to 1$ 时 $1-a^2$ 下溢）：
+
 $$
 \boxed{\log\pi(a\mid s) = \log\mathcal{N}(u;\mu,\sigma) - \sum_i\log(1-\tanh^2(u_i))}
 $$
 
-若再仿射到环境盒 $a=\mathrm{scale}\odot\tanh(u)+\mathrm{bias}$，则多一项 $\log\lvert\mathrm{scale}_i\rvert$：
+$J_\pi$ 与 soft Bellman 中的 $-\alpha\log\pi$ 均是**环境动作 $a$** 上的对数密度，须用此式而非 $\log\mathcal{N}(u)$。漏掉雅可比则最小化的不再是 $\mathrm{KL}(\pi_\phi\|e^{Q/\alpha}/Z)$，熵与 $\alpha$ 的尺度都会偏。
+
+若再仿射到环境盒 $a=\mathrm{scale}\odot\tanh(u)+\mathrm{bias}$，体积元再乘 $|\mathrm{scale}_i|$：
 
 $$
 \log\pi(a\mid s) = \log\mathcal{N}(u;\mu,\sigma) - \sum_i\log\big(\lvert\mathrm{scale}_i\rvert\,(1-\tanh^2(u_i))\big)
 $$
 
-漏掉雅可比项，熵 $\mathcal{H}(\pi)$ 会对错的密度计算，$\alpha$ 的尺度也会漂。实现上常把 $\log\sigma$ 限制在有限区间，避免 $\sigma\to 0$ 或过大。
+$\mathrm{scale}$ 对 $\nabla_\phi$ 常可视为常数，但 $\log\pi$ 的绝对值进入熵与自动调节的 $\alpha$，不可省。
+
+实现上常把 $\log\sigma$ 限制在有限区间：$\sigma\to 0$ 时 $\log\pi$ 易爆；$\sigma$ 过大则 $u$ 长期落在 $\tanh$ 饱和区，梯度消失。这是数值约束，不改变 $J_\pi$。
 
 ### 6.5 延迟更新
 
-$Q$ 若还很噪，Actor 会追逐虚假峰值。与 TD3 类似：Critic 更新更勤，Actor 隔若干步再更新，让 $Q$ 先跟上。
+$Q$ 若还很噪，Actor 会追逐虚假峰值。与 TD3 类似：Critic 更新更勤，Actor 隔若干步再沿 $\nabla_\phi J_\pi$ 下降，让 $Q$ 先跟上。
 
 ---
 

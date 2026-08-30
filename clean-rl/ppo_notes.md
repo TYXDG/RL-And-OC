@@ -520,9 +520,56 @@ $$
 L_{total} = L^{CLIP} - c_{ent} \cdot H(\pi_\theta) + c_{vf} \cdot L^{VF}
 $$
 
-- **$L^{CLIP}$**：裁剪后的策略损失
+- **$L^{CLIP}$**：裁剪后的策略损失（见第五节）
 - **$-c_{ent} \cdot H(\pi_\theta)$**：熵正则化（负号 = 最大化熵），鼓励探索，防止过早收敛
-- **$c_{vf} \cdot L^{VF}$**：价值函数损失，让 Critic 准确估计 $V(s)$，也有裁剪版本
+- **$c_{vf} \cdot L^{VF}$**：价值函数损失，让 Critic 准确估计 $V(s)$
+
+实现里对应 `L_total = L_CLIP - ent_coef * entropy + vf_coef * v_loss`。
+
+### 10.1 熵 $H(\pi_\theta)$
+
+状态 $s$ 上策略分布的 Shannon 熵。离散动作：
+
+$$
+H(\pi_\theta(\cdot|s)) = -\sum_a \pi_\theta(a|s)\log\pi_\theta(a|s)
+$$
+
+连续动作常用对角高斯的解析熵：
+
+$$
+H(\pi_\theta(\cdot|s)) = \frac{1}{2}\sum_i \log\bigl(2\pi e\,\sigma_i(s)^2\bigr)
+$$
+
+损失里对旧策略采集的状态取期望：
+
+$$
+H(\pi_\theta) = \mathbb{E}_{s\sim\pi_{\theta_{old}}}\bigl[H(\pi_\theta(\cdot|s))\bigr]
+$$
+
+熵越大，动作越不确定。减去 $c_{ent} H$ 等价于最大化熵；$c_{ent}$（`ent_coef`）通常取 $0.01$。
+
+### 10.2 价值损失 $L^{VF}$
+
+回归目标是 GAE 回报（第九节）：$\hat{R}_t = \hat{A}_t + V_{\theta_{old}}(s_t)$。未裁剪时为 MSE：
+
+$$
+L^{VF} = \mathbb{E}\Bigl[\bigl(V_\theta(s_t) - \hat{R}_t\bigr)^2\Bigr]
+$$
+
+价值裁剪（与 $L^{CLIP}$ 同构）：先把 $V$ 的变化限制在 $\pm\epsilon$，再取较坏的一边，避免 Critic 一步跳太远：
+
+$$
+V^{clip}_t = V_{\theta_{old}}(s_t) + \mathrm{clip}\bigl(V_\theta(s_t) - V_{\theta_{old}}(s_t),\; -\epsilon,\; \epsilon\bigr)
+$$
+
+$$
+L^{VF} = \mathbb{E}\Bigl[\max\Bigl(
+  \bigl(V_\theta(s_t)-\hat{R}_t\bigr)^2,\;
+  \bigl(V^{clip}_t-\hat{R}_t\bigr)^2
+\Bigr)\Bigr]
+$$
+
+$c_{vf}$（`vf_coef`）通常取 $0.5$。
 
 ---
 
