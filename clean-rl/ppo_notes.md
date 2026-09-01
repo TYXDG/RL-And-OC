@@ -486,6 +486,8 @@ $\lambda$ 不是再乘一个折扣，而是在「信模型 $V$」与「信轨迹
 - **Actor**：决定"做什么"，输出动作概率分布
 - **Critic**：评价"做得好不好"，输出状态价值 $V(s)$，用于计算 Advantage
 
+上图是概念框图。CleanRL `ppo_continuous_action.py` 里 Actor / Critic 是**两套独立 MLP**，不共享特征；均值由 MLP 给出，标准差是与状态无关的 `logstd`。展开说明见 [`ppo_mlp_notes.md`](ppo_mlp_notes.md)。
+
 ---
 
 ## 九、完整训练流程
