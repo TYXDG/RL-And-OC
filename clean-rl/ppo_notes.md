@@ -1,5 +1,8 @@
 # PPO（Proximal Policy Optimization）算法笔记
 
+下文公式与流程对应的实现，见带注释的连续动作脚本[`ppo_continuous_action.py`](https://github.com/tangyx96/cleanrl/blob/master/cleanrl/ppo_continuous_action.py)（自 [CleanRL](https://github.com/vwxyzjn/cleanrl) 分叉）。
+网络结构见 [`ppo_mlp_notes.md`](ppo_mlp_notes.md)。
+
 ---
 
 ## 一、算法定位

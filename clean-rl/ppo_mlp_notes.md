@@ -1,6 +1,7 @@
 # CleanRL 连续动作 PPO 中的 MLP
 
-对应实现：`cleanrl/ppo_continuous_action.py` 中的 `Agent`。算法层面见 [`ppo_notes.md`](ppo_notes.md)。本文说明该实现所采用的函数近似器。
+对应实现见带注释的[`ppo_continuous_action.py`](https://github.com/tangyx96/cleanrl/blob/master/cleanrl/ppo_continuous_action.py)（`Agent`）。
+算法层面见 [`ppo_notes.md`](ppo_notes.md)。本文说明该实现所采用的函数近似器。
 
 ---
 
